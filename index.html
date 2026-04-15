@@ -6,75 +6,83 @@
 <title>攝影棚場景管理系統</title>
 <style>
   :root {
-    --bg: #2a2a2a;
-    --bg2: #222222;
-    --bg3: #333333;
-    --border: rgba(255,255,255,0.1);
-    --border2: rgba(255,255,255,0.2);
-    --text: #1a1a1a;
-    --text2: #444444;
-    --text3: #888888;
-    --accent: #e8720c;
-    --accent2: #c45e08;
-    --blue: #3a8fd4;
-    --green: #2a9a50;
-    --red: #d04040;
-    --radius: 10px;
-    --radius-sm: 6px;
+    --bg: #2a2a2a; --bg2: #222; --bg3: #333;
+    --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+    --accent: #e8720c; --accent2: #c45e08;
+    --blue: #3a8fd4; --red: #d04040;
+    --radius: 10px; --radius-sm: 6px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: #111; min-height: 100vh; }
-
-  /* LAYOUT */
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: #eee; min-height: 100vh; }
   .app { display: flex; height: 100vh; overflow: hidden; }
   .sidebar { width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
   .main { flex: 1; overflow-y: auto; background: var(--bg); }
 
-  /* SIDEBAR */
-  .sidebar-header { padding: 18px 16px 12px; border-bottom: 1px solid var(--border); }
+  .sidebar-header { padding: 16px 16px 10px; border-bottom: 1px solid var(--border); }
   .sidebar-header h1 { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; }
-  .sidebar-header p { font-size: 11px; color: #888; margin-top: 3px; }
+  .sidebar-header p { font-size: 11px; color: #888; margin-top: 2px; }
+  .sync-status { font-size: 10px; margin-top: 5px; color: #888; display: flex; align-items: center; gap: 5px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #555; flex-shrink: 0; transition: background 0.3s; }
+  .sync-dot.online { background: #4caf50; }
+  .sync-dot.saving { background: var(--accent); animation: pulse 0.8s infinite; }
+  .sync-dot.error  { background: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
   .sidebar-search { padding: 10px 12px; border-bottom: 1px solid var(--border); }
   .sidebar-search input { width: 100%; background: #2e2e2e; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; color: #ddd; font-size: 12px; outline: none; }
-  .sidebar-search input::placeholder { color: #666; }
+  .sidebar-search input::placeholder { color: #555; }
   .sidebar-list { flex: 1; overflow-y: auto; padding: 8px 0; }
   .sidebar-list::-webkit-scrollbar { width: 4px; }
-  .sidebar-list::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+  .sidebar-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; font-size: 12px; color: #aaa; border-left: 2px solid transparent; transition: background 0.1s, color 0.1s; position: relative; }
   .nav-item:hover { background: rgba(255,255,255,0.06); color: #ddd; }
   .nav-item.active { background: rgba(232,114,12,0.18); color: var(--accent); border-left-color: var(--accent); }
-  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: #666; flex-shrink: 0; }
+  .nav-item .dot { width: 6px; height: 6px; border-radius: 50%; background: #555; flex-shrink: 0; }
   .nav-item.active .dot { background: var(--accent); }
+  .nav-item .drag-handle { color: #555; font-size: 11px; cursor: grab; padding: 2px 3px; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
+  .nav-item:hover .drag-handle { opacity: 1; }
+  .nav-item.drag-over { border-top: 2px solid var(--accent); }
+  .nav-item.dragging-item { opacity: 0.4; }
   .nav-add { margin: 8px 12px; padding: 7px; border: 1px dashed #555; border-radius: var(--radius-sm); font-size: 12px; color: #777; text-align: center; cursor: pointer; transition: all 0.15s; }
   .nav-add:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* MAIN HEADER */
   .main-header { padding: 24px 28px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .main-header h2 { font-size: 22px; font-weight: 600; color: #111; }
-  .main-header .scene-note-input { font-size: 13px; color: #555; background: none; border: none; outline: none; width: 100%; margin-top: 4px; padding: 0; font-family: inherit; }
-  .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+  .main-header-left { flex: 1; min-width: 0; }
+  .editable-title { background: none; border: none; font-size: 22px; font-weight: 600; color: #eee; font-family: inherit; outline: none; width: 100%; }
+  .editable-title:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
+  .scene-note-input { font-size: 13px; color: #888; background: none; border: none; outline: none; width: 100%; margin-top: 4px; padding: 0; font-family: inherit; }
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+  .status-sel { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.15); color: #aaa; padding: 5px 10px; border-radius: 20px; font-size: 11px; outline: none; cursor: pointer; font-family: inherit; }
 
-  /* TABS */
-  .section-tabs { display: flex; gap: 4px; padding: 16px 28px 0; border-bottom: 1px solid rgba(0,0,0,0.12); }
-  .stab { padding: 8px 18px; font-size: 13px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
-  .stab:hover { color: #222; }
+  .section-tabs { display: flex; gap: 4px; padding: 16px 28px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .stab { padding: 8px 18px; font-size: 13px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
+  .stab:hover { color: #ccc; }
   .stab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
 
-  /* PANELS */
   .panel { padding: 24px 28px; display: none; }
   .panel.active { display: block; }
+  .sec-label { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .sec-label::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+  .panel-gap { margin-top: 24px; }
 
-  /* IMAGE OVERLAY ZONE */
   .overlay-zone { position: relative; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; min-height: 240px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
   .overlay-zone img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .overlay-zone .upload-hint { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #888; font-size: 13px; pointer-events: none; }
+  .overlay-zone .upload-hint { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #777; font-size: 13px; pointer-events: none; }
   .overlay-zone .upload-hint span:first-child { font-size: 28px; }
   .overlay-zone input[type=file] { display: none; }
-  .overlay-zone .img-change-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #ccc; font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); display: none; }
+  .img-change-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #ccc; font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); display: none; }
   .overlay-zone:hover .img-change-btn { display: block; }
 
-  /* LIGHT TAGS ON IMAGE - defined below */
+  .light-tag { position: absolute; background: rgba(0,0,0,0.82); border: 1px solid var(--accent); border-radius: 20px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; cursor: move; user-select: none; backdrop-filter: blur(4px); min-width: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  .light-tag .tag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .light-tag .tag-name { font-size: 10px; color: #aaa; white-space: nowrap; }
+  .light-tag .tag-values { display: flex; gap: 5px; align-items: center; }
+  .light-tag .tag-val { font-size: 11px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 1px 4px; border-radius: 3px; }
+  .light-tag .tag-val:hover { background: rgba(232,114,12,0.2); }
+  .light-tag .tag-val[contenteditable=true] { outline: 1px solid var(--accent); background: rgba(232,114,12,0.12); min-width: 30px; }
+  .light-tag .tag-sep { color: #555; font-size: 10px; }
 
-  /* LIGHT LIST (below image) */
   .lights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 16px; }
   .light-card { background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 12px 14px; min-width: 0; }
   .light-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 6px; }
@@ -82,102 +90,64 @@
   .light-card-name:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
   .light-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .lf { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .lf label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  .lf label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
   .lf input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 5px 7px; color: #eee; font-size: 12px; font-weight: 500; outline: none; font-family: inherit; width: 100%; min-width: 0; }
   .lf input:focus { border-color: var(--accent); }
   .lf.full { grid-column: 1 / -1; }
-  .rm-btn { background: none; border: none; color: #777; font-size: 14px; cursor: pointer; padding: 2px 4px; border-radius: 3px; flex-shrink: 0; }
-  .rm-btn:hover { color: var(--red); background: rgba(208,64,64,0.15); }
-  .add-light-btn { margin-top: 12px; padding: 8px; width: 100%; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: none; color: #888; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .rm-btn { background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 2px 4px; border-radius: 3px; flex-shrink: 0; }
+  .rm-btn:hover { color: var(--red); }
+  .add-light-btn { margin-top: 12px; padding: 8px; width: 100%; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: none; color: #777; font-size: 12px; cursor: pointer; transition: all 0.15s; }
   .add-light-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* SIDEBAR DRAG REORDER */
-  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 14px; cursor: pointer; font-size: 12px; color: #aaa; border-left: 2px solid transparent; transition: background 0.1s, color 0.1s; position: relative; }
-  .nav-item .drag-handle { color: #666; font-size: 11px; cursor: grab; padding: 2px 3px; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; line-height: 1; }
-  .nav-item:hover .drag-handle { opacity: 1; }
-  .nav-item.drag-over { border-top: 2px solid var(--accent); }
-  .nav-item.dragging-item { opacity: 0.4; }
-
-  /* CAMERA PANEL */
   .cam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-  .cam-card { background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); padding: 16px; }
+  .cam-card { background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); padding: 16px; min-width: 0; }
   .cam-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .cam-name { font-size: 14px; font-weight: 700; background: none; border: none; font-family: inherit; color: var(--blue); outline: none; width: 80px; }
-  .cam-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .cam-field { display: flex; flex-direction: column; gap: 4px; }
-  .cam-field label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
-  .cam-field input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 9px; color: #eee; font-size: 13px; font-weight: 500; outline: none; font-family: 'Courier New', monospace; }
+  .cam-name { font-size: 14px; font-weight: 700; background: none; border: none; font-family: inherit; color: var(--blue); outline: none; width: 80px; min-width: 0; }
+  .cam-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cam-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .cam-field label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .cam-field input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 8px; color: #eee; font-size: 13px; font-weight: 500; outline: none; font-family: 'Courier New', monospace; width: 100%; min-width: 0; }
   .cam-field input:focus { border-color: var(--blue); }
   .cam-field.full { grid-column: 1 / -1; }
-  .cam-add-btn { margin-top: 14px; padding: 10px; width: 100%; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: none; color: #888; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .cam-add-btn { margin-top: 14px; padding: 10px; width: 100%; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: none; color: #777; font-size: 13px; cursor: pointer; transition: all 0.15s; }
   .cam-add-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .cam-img-zone { position: relative; border-radius: var(--radius-sm); overflow: hidden; background: #2a2a2a; min-height: 150px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; margin-top: 14px; }
+  .cam-img-zone { border-radius: var(--radius-sm); overflow: hidden; background: #2a2a2a; min-height: 150px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; margin-top: 14px; }
   .cam-img-zone img { width: 100%; object-fit: contain; }
-  .cam-img-hint { color: #777; font-size: 11px; text-align: center; }
+  .cam-img-hint { color: #666; font-size: 11px; text-align: center; }
 
-  /* ONAIR PANEL */
   .onair-zone { border-radius: var(--radius); overflow: hidden; background: #3a3a3a; min-height: 300px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; position: relative; }
   .onair-zone img { width: 100%; object-fit: contain; }
-  .onair-hint { color: #777; font-size: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
-  .onair-hint span:first-child { font-size: 32px; }
+  .onair-hint { color: #666; font-size: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
   .note-area { width: 100%; background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 10px 14px; color: #ddd; font-size: 13px; font-family: inherit; resize: vertical; outline: none; margin-top: 12px; line-height: 1.6; }
   .note-area:focus { border-color: rgba(255,255,255,0.25); }
 
-  /* BUTTONS */
   .btn { padding: 7px 16px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-primary:hover { background: var(--accent2); }
-  .btn-ghost { background: none; border: 1px solid rgba(255,255,255,0.2); color: #aaa; }
-  .btn-ghost:hover { border-color: #aaa; color: #eee; }
-  .btn-danger { background: none; border: 1px solid rgba(255,255,255,0.1); color: #777; }
+  .btn-danger { background: none; border: 1px solid rgba(255,255,255,0.12); color: #777; }
   .btn-danger:hover { border-color: var(--red); color: var(--red); }
 
-  /* TOAST */
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a1f; color: #f0f0f0; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999; }
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #111; color: #f0f0f0; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 9999; }
   .toast.show { opacity: 1; }
 
-  /* SECTION LABELS */
-  .sec-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-  .sec-label::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
-  .panel-gap { margin-top: 24px; }
+  .loading-overlay { position: fixed; inset: 0; background: var(--bg2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; z-index: 1000; }
+  .loading-overlay.hidden { display: none; }
+  .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: #888; }
 
-  /* TITLE EDIT */
-  .editable-title { background: none; border: none; font-size: 22px; font-weight: 600; color: #eee; font-family: inherit; outline: none; width: 100%; }
-  .editable-title:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
-
-  /* STATUS BADGE */
-  .status-sel { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.15); color: #aaa; padding: 5px 10px; border-radius: 20px; font-size: 11px; outline: none; cursor: pointer; font-family: inherit; }
-
-  .main-header-left { flex: 1; min-width: 0; }
-  .main-header .scene-note-input { font-size: 13px; color: #888; background: none; border: none; outline: none; width: 100%; margin-top: 4px; padding: 0; font-family: inherit; }
-
-  /* SCROLLBAR */
   .main::-webkit-scrollbar { width: 6px; }
   .main::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-  .sidebar-list::-webkit-scrollbar { width: 4px; }
-  .sidebar-list::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-  /* LIGHT TAG */
-  .light-tag { position: absolute; background: rgba(0,0,0,0.8); border: 1px solid var(--accent); border-radius: 20px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; cursor: move; user-select: none; backdrop-filter: blur(4px); min-width: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-  .light-tag .tag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-  .light-tag .tag-name { font-size: 10px; color: #aaa; white-space: nowrap; }
-  .light-tag .tag-values { display: flex; gap: 5px; align-items: center; }
-  .light-tag .tag-val { font-size: 11px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 1px 4px; border-radius: 3px; }
-  .light-tag .tag-val:hover { background: rgba(232,114,12,0.2); }
-  .light-tag .tag-val[contenteditable=true] { outline: 1px solid var(--accent); background: rgba(232,114,12,0.12); min-width: 30px; }
-  .light-tag .tag-sep { color: #666; font-size: 10px; }
-  /* ── RESPONSIVE ── */
-
-  /* Mobile bottom nav bar */
+  /* MOBILE NAV */
   .mobile-nav-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); border-top: 1px solid var(--border); z-index: 200; flex-direction: column; }
   .mobile-nav-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); }
-  .mobile-nav-title { font-size: 13px; font-weight: 600; color: var(--accent); }
-  .mobile-nav-toggle { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+  .mobile-nav-title { font-size: 13px; font-weight: 600; color: var(--accent); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
+  .mobile-nav-toggle { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; flex-shrink: 0; }
   .mobile-nav-list { display: none; max-height: 50vh; overflow-y: auto; padding: 8px 0; }
   .mobile-nav-list.open { display: block; }
   .mobile-nav-add { padding: 10px 16px; font-size: 13px; color: var(--accent); border-top: 1px solid var(--border); cursor: pointer; text-align: center; }
 
-  /* iPad: narrow sidebar */
   @media (max-width: 900px) {
     .sidebar { width: 180px; min-width: 180px; }
     .panel { padding: 16px 18px; }
@@ -186,39 +156,44 @@
     .lights-grid { grid-template-columns: 1fr 1fr; }
     .cam-grid { grid-template-columns: 1fr; }
   }
-
-  /* Mobile: hide sidebar, show bottom drawer */
   @media (max-width: 600px) {
     .app { flex-direction: column; height: 100dvh; }
     .sidebar { display: none; }
     .main { flex: 1; overflow-y: auto; padding-bottom: 110px; }
     .mobile-nav-bar { display: flex; }
-    .panel { padding: 14px 14px; }
+    .panel { padding: 14px; }
     .main-header { padding: 14px 14px 0; gap: 8px; }
     .section-tabs { padding: 10px 14px 0; overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; gap: 0; }
-    .stab { padding: 8px 14px; font-size: 13px; flex-shrink: 0; }
+    .stab { padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
     .editable-title { font-size: 18px; }
-    .header-actions { gap: 6px; flex-wrap: wrap; }
-    .btn { padding: 8px 12px; font-size: 13px; }
-    .status-sel { font-size: 12px; }
     .lights-grid { grid-template-columns: 1fr; }
     .cam-grid { grid-template-columns: 1fr; }
-    .lf input, .cam-field input { font-size: 16px; padding: 9px 10px; } /* prevent iOS zoom */
-    .light-card-name { font-size: 14px; }
-    .note-area { font-size: 16px; } /* prevent iOS zoom */
+    .lf input, .cam-field input { font-size: 16px; padding: 9px 10px; }
+    .light-card-name, .cam-name { font-size: 15px; }
+    .note-area { font-size: 16px; }
     .overlay-zone { min-height: 180px; }
     .onair-zone { min-height: 200px; }
-    .img-change-btn { display: block !important; } /* always show on touch */
+    .img-change-btn { display: block !important; }
     .toast { bottom: 120px; }
   }
 </style>
 </head>
 <body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">連線 Firebase 中…</div>
+</div>
+
 <div class="app">
   <div class="sidebar">
     <div class="sidebar-header">
       <h1>DT 攝影棚</h1>
       <p>場景管理系統</p>
+      <div class="sync-status">
+        <span class="sync-dot" id="syncDot"></span>
+        <span id="syncText">連線中…</span>
+      </div>
     </div>
     <div class="sidebar-search">
       <input type="text" placeholder="搜尋節目…" id="searchInput" oninput="filterNav()">
@@ -229,7 +204,6 @@
   <div class="main" id="mainArea"></div>
 </div>
 
-<!-- Mobile bottom nav drawer -->
 <div class="mobile-nav-bar" id="mobileNav">
   <div class="mobile-nav-header">
     <span class="mobile-nav-title" id="mobileNavTitle">選擇節目</span>
@@ -238,417 +212,353 @@
   <div class="mobile-nav-list" id="mobileNavList"></div>
   <div class="mobile-nav-add" onclick="addProgram()">＋ 新增節目</div>
 </div>
+
 <div class="toast" id="toast"></div>
 
-<script>
-const DEFAULT_PROGRAMS = [
-  { id:1, name:"科技剪報中", status:"就緒", sceneNote:"擬太陽光，白長桌+高腳椅，攝影機+提詞機", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"",kelvin:"4200K",note:""},{name:"輔燈",intensity:"",kelvin:"",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-  { id:2, name:"導讀矽紀元", status:"就緒", sceneNote:"mini mic*2，進L8", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"23%",kelvin:"4200K",note:""},{name:"輔燈",intensity:"23%",kelvin:"4200K",note:""},{name:"頂光",intensity:"",kelvin:"",note:""}],
-    cameras:[{name:"C1",aperture:"",shutter:"",iso:"",kelvin:"",note:"特寫"},{name:"C2",aperture:"",shutter:"",iso:"",kelvin:"",note:"雙人"}], onairImg:null, onairNote:"" },
-  { id:3, name:"It's 秀 time", status:"準備中", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"80%",kelvin:"3000K",note:""},{name:"輔燈",intensity:"80%",kelvin:"3000K",note:""},{name:"頂光",intensity:"7%",kelvin:"3000K",note:""}],
-    cameras:[{name:"C1",aperture:"",shutter:"",iso:"",kelvin:"",note:"特寫"},{name:"C2",aperture:"",shutter:"",iso:"",kelvin:"",note:"雙人"}], onairImg:null, onairNote:"" },
-  { id:4, name:"矽島春秋", status:"就緒", sceneNote:"0912內湖新場景", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"燈(1)",intensity:"50%",kelvin:"3400K",note:""},{name:"燈(2)",intensity:"50%",kelvin:"3400K",note:""},{name:"燈(3)",intensity:"5%",kelvin:"3400K",note:""},{name:"燈(4)",intensity:"1%",kelvin:"3800K",note:""}],
-    cameras:[{name:"C1",aperture:"F4.5",shutter:"1/60",iso:"iso800",kelvin:"3400k",note:""},{name:"C2",aperture:"F5.6",shutter:"1/60",iso:"iso800",kelvin:"3400k",note:""},{name:"C3",aperture:"F4.0",shutter:"1/60",iso:"iso800",kelvin:"3400k",note:""}], onairImg:null, onairNote:"" },
-  { id:5, name:"AI EXPO 單人專訪", status:"就緒", sceneNote:"單人專訪", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"燈1",intensity:"45%",kelvin:"4200K",note:""},{name:"燈2",intensity:"10%",kelvin:"4200K",note:""},{name:"燈3",intensity:"5%",kelvin:"2700K",note:""},{name:"燈4",intensity:"3%",kelvin:"2500K",note:""}],
-    cameras:[{name:"C1",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""},{name:"C2",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""}], onairImg:null, onairNote:"" },
-  { id:6, name:"AI EXPO 雙人訪談", status:"就緒", sceneNote:"雙人訪談", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"燈1",intensity:"59%",kelvin:"4200K",note:""},{name:"燈2",intensity:"50%",kelvin:"4200K",note:""},{name:"燈3",intensity:"5%",kelvin:"4200K",note:""},{name:"燈4",intensity:"5%",kelvin:"4200K",note:""},{name:"燈5",intensity:"1%",kelvin:"2500K",note:""}],
-    cameras:[{name:"C1",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""},{name:"C2",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""},{name:"C3",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""}], onairImg:null, onairNote:"" },
-  { id:7, name:"展望會議 單人訪談", status:"就緒", sceneNote:"明亮、簡單，白板/反光板", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主光",intensity:"100%",kelvin:"4800K",note:""},{name:"左輔",intensity:"50%",kelvin:"4800K",note:""},{name:"右補",intensity:"50%",kelvin:"4800K",note:"遮光片"}],
-    cameras:[{name:"C1",aperture:"F4.0",shutter:"1/60",iso:"iso800",kelvin:"4500k",note:""},{name:"C2",aperture:"F7.1",shutter:"1/60",iso:"iso800",kelvin:"4500k",note:""}], onairImg:null, onairNote:"" },
-  { id:8, name:"女人迷 公益影片", status:"就緒", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主光1",intensity:"70%",kelvin:"4200K",note:""},{name:"主光2",intensity:"60%",kelvin:"4200K",note:""},{name:"主光3",intensity:"70%",kelvin:"4200K",note:""},{name:"窗光",intensity:"31%",kelvin:"4200K",note:""},{name:"勾邊",intensity:"1%",kelvin:"2500K",note:""},{name:"植物暖光",intensity:"15%",kelvin:"2700K",note:""}],
-    cameras:[{name:"C1",aperture:"F2.4",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""},{name:"C2",aperture:"F2.4",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:""}], onairImg:null, onairNote:"" },
-  { id:9, name:"Computex 展前觀察室", status:"準備中", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈1",intensity:"84%",kelvin:"4800K",note:""},{name:"主燈2",intensity:"85%",kelvin:"4800K",note:""},{name:"主燈3",intensity:"83%",kelvin:"4800K",note:""},{name:"側燈",intensity:"9%",kelvin:"3200K",note:""},{name:"補燈",intensity:"9%",kelvin:"4800K",note:""},{name:"色光1",intensity:"H210/S39",kelvin:"I7",note:""},{name:"色光2",intensity:"H214/S40",kelvin:"I11",note:""}],
-    cameras:[{name:"C1",aperture:"F2",shutter:"1/60",iso:"6db",kelvin:"4800K",note:""},{name:"C2",aperture:"F2",shutter:"1/60",iso:"6db",kelvin:"4800K",note:""},{name:"C3",aperture:"F2",shutter:"1/60",iso:"6db",kelvin:"4800K",note:""}], onairImg:null, onairNote:"" },
-  { id:10, name:"Tech666", status:"準備中", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈1",intensity:"80%",kelvin:"5000K",note:""},{name:"主燈2",intensity:"80%",kelvin:"5000K",note:""},{name:"藍光",intensity:"",kelvin:"",note:""},{name:"橘光",intensity:"",kelvin:"",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-  { id:11, name:"Red Hat 業務專案", status:"就緒", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"100%",kelvin:"4200K",note:""},{name:"輔燈",intensity:"100%",kelvin:"4200K",note:""},{name:"背景",intensity:"40%",kelvin:"4200K",note:""},{name:"側1",intensity:"5%",kelvin:"4200K",note:""},{name:"側2",intensity:"10%",kelvin:"3000K",note:""},{name:"側3",intensity:"5%",kelvin:"4200K",note:""},{name:"側4",intensity:"10%",kelvin:"3000K",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-  { id:12, name:"圖然說新場景", status:"就緒", sceneNote:"側邊改「藍窗框」", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈1",intensity:"100%",kelvin:"4200K",note:""},{name:"主燈2",intensity:"100%",kelvin:"4200K",note:""},{name:"色光1",intensity:"H163/S42",kelvin:"i94%",note:""},{name:"色光2",intensity:"H258/S44",kelvin:"i62%",note:""},{name:"色光3",intensity:"H216/S44",kelvin:"i18%",note:""}],
-    cameras:[{name:"C1",aperture:"F2.2",shutter:"1/60",iso:"",kelvin:"4200k",note:""},{name:"C2",aperture:"F2.4",shutter:"1/60",iso:"",kelvin:"4200k",note:""}], onairImg:null, onairNote:"" },
-  { id:13, name:"新漢 NEXOne 領袖會客室", status:"就緒", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"100%",kelvin:"3200K",note:""},{name:"輔燈",intensity:"100%",kelvin:"3200K",note:""},{name:"背景",intensity:"50%",kelvin:"3200K",note:""},{name:"側光",intensity:"6%",kelvin:"3200K",note:""},{name:"補光",intensity:"5%",kelvin:"3000K",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-  { id:14, name:"Eric副總新節目", status:"準備中", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"100%",kelvin:"5000K",note:""},{name:"輔燈",intensity:"80%",kelvin:"5000K",note:""},{name:"補燈1",intensity:"30%",kelvin:"5000K",note:""},{name:"補燈2",intensity:"8%",kelvin:"5000K",note:""},{name:"勾邊",intensity:"10%",kelvin:"5000K",note:""}],
-    cameras:[{name:"C1",aperture:"F2.2",shutter:"1/60",iso:"",kelvin:"4400k",note:"4K拍亮一點"}], onairImg:null, onairNote:"" },
-  { id:15, name:"自動化展前訪談", status:"準備中", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈1",intensity:"100%",kelvin:"4800K",note:""},{name:"主燈2",intensity:"100%",kelvin:"4800K",note:""},{name:"側燈",intensity:"5%",kelvin:"4800K",note:""},{name:"勾邊",intensity:"1%",kelvin:"3200K",note:""},{name:"補燈",intensity:"5%",kelvin:"4800K",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-  { id:16, name:"AI EXPO 2026 創作之巔", status:"準備中", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈1",intensity:"50%",kelvin:"3200K",note:""},{name:"主燈2",intensity:"50%",kelvin:"3200K",note:""},{name:"補燈1",intensity:"4%",kelvin:"3200K",note:""},{name:"補燈2",intensity:"3%",kelvin:"3200K",note:""}],
-    cameras:[{name:"C1",aperture:"",shutter:"",iso:"",kelvin:"3400K",note:""},{name:"C2",aperture:"",shutter:"",iso:"",kelvin:"3500K",note:""},{name:"C3",aperture:"",shutter:"",iso:"",kelvin:"3400K",note:""}], onairImg:null, onairNote:"" },
-  { id:17, name:"IC之音 神話1", status:"就緒", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"50%",kelvin:"3400K",note:""},{name:"補燈1",intensity:"7%",kelvin:"3400K",note:""},{name:"補燈2",intensity:"5%",kelvin:"3400K",note:""},{name:"勾邊",intensity:"4%",kelvin:"2800K",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-  { id:18, name:"IC之音 神話2", status:"就緒", sceneNote:"", sceneImg:null, sceneTagPos:{},
-    lights:[{name:"主燈",intensity:"50%",kelvin:"3400K",note:""},{name:"補燈1",intensity:"7%",kelvin:"3400K",note:""},{name:"補燈2",intensity:"5%",kelvin:"3400K",note:""}],
-    cameras:[], onairImg:null, onairNote:"" },
-];
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, getDocs }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-let programs = JSON.parse(localStorage.getItem('dt_studio_v3') || 'null') || DEFAULT_PROGRAMS;
-let activeId = programs[0]?.id;
-let activeTab = 'scene';
-let nextId = Math.max(...programs.map(p=>p.id), 0) + 1;
+const app = initializeApp({
+  apiKey: "AIzaSyAA_lBeMcU_MHwBIakycWMY1qVFQpNFlLw",
+  authDomain: "dt-studio-5bb2b.firebaseapp.com",
+  projectId: "dt-studio-5bb2b",
+  storageBucket: "dt-studio-5bb2b.firebasestorage.app",
+  messagingSenderId: "453498810482",
+  appId: "1:453498810482:web:265ae1a1aac433355e52eb"
+});
+const db = getFirestore(app);
+const COL = 'programs';
+const colRef = () => collection(db, COL);
+const docRef = id => doc(db, COL, String(id));
+
+// ── STATE ──
+let programs = [], activeId = null, activeTab = 'scene', nextId = 1;
 let dragging = null, dragOffX = 0, dragOffY = 0;
+let navDraggingId = null, saveTimer = null;
 
-function save() {
-  localStorage.setItem('dt_studio_v3', JSON.stringify(programs));
-  toast('已儲存');
+// ── SYNC STATUS ──
+function setSyncStatus(state, text) {
+  const dot = document.getElementById('syncDot');
+  const sp  = document.getElementById('syncText');
+  dot.className = 'sync-dot ' + state;
+  sp.textContent = text;
 }
 
-function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'), 1800);
-}
+// ── FIRESTORE ──
+onSnapshot(colRef(), snap => {
+  const incoming = [];
+  snap.forEach(d => incoming.push(d.data()));
+  incoming.sort((a,b) => (a.order??a.id) - (b.order??b.id));
+  programs = incoming;
+  nextId   = programs.length ? Math.max(...programs.map(p=>p.id))+1 : 1;
+  if (!activeId && programs.length) activeId = programs[0].id;
+  if (activeId && !getP(activeId) && programs.length) activeId = programs[0].id;
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  setSyncStatus('online', '已同步');
+  render();
+}, err => { setSyncStatus('error', '連線失敗'); console.error(err); });
 
+async function saveProgram(p) {
+  setSyncStatus('saving', '儲存中…');
+  try { await setDoc(docRef(p.id), p); setSyncStatus('online', '已同步'); toast('已儲存'); }
+  catch(e) { setSyncStatus('error', '儲存失敗'); toast('儲存失敗'); }
+}
+async function removeProgram(id) {
+  try { await deleteDoc(docRef(id)); } catch(e) { setSyncStatus('error', '刪除失敗'); }
+}
+async function saveOrder() {
+  try { await Promise.all(programs.map((p,i) => setDoc(docRef(p.id), {...p, order:i}))); setSyncStatus('online','已同步'); }
+  catch(e) { setSyncStatus('error','儲存失敗'); }
+}
+function debouncedSave(p) { clearTimeout(saveTimer); saveTimer = setTimeout(()=>saveProgram(p), 1200); }
+
+// ── SEED ──
+(async()=>{
+  const snap = await getDocs(colRef());
+  if (!snap.empty) return;
+  const D = [
+    {id:1,name:"科技剪報中",status:"就緒",sceneNote:"擬太陽光，白長桌+高腳椅，攝影機+提詞機",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"",kelvin:"4200K",note:""},{name:"輔燈",intensity:"",kelvin:"",note:""}],cameras:[],onairImg:null,onairNote:"",order:0},
+    {id:2,name:"導讀矽紀元",status:"就緒",sceneNote:"mini mic*2，進L8",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"23%",kelvin:"4200K",note:""},{name:"輔燈",intensity:"23%",kelvin:"4200K",note:""},{name:"頂光",intensity:"",kelvin:"",note:""}],cameras:[{name:"C1",aperture:"",shutter:"",iso:"",kelvin:"",note:"特寫",img:null},{name:"C2",aperture:"",shutter:"",iso:"",kelvin:"",note:"雙人",img:null}],onairImg:null,onairNote:"",order:1},
+    {id:3,name:"It's 秀 time",status:"準備中",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"80%",kelvin:"3000K",note:""},{name:"輔燈",intensity:"80%",kelvin:"3000K",note:""},{name:"頂光",intensity:"7%",kelvin:"3000K",note:""}],cameras:[],onairImg:null,onairNote:"",order:2},
+    {id:4,name:"矽島春秋",status:"就緒",sceneNote:"0912內湖新場景",sceneImg:null,sceneTagPos:{},lights:[{name:"燈(1)",intensity:"50%",kelvin:"3400K",note:""},{name:"燈(2)",intensity:"50%",kelvin:"3400K",note:""},{name:"燈(3)",intensity:"5%",kelvin:"3400K",note:""},{name:"燈(4)",intensity:"1%",kelvin:"3800K",note:""}],cameras:[{name:"C1",aperture:"F4.5",shutter:"1/60",iso:"iso800",kelvin:"3400k",note:"",img:null},{name:"C2",aperture:"F5.6",shutter:"1/60",iso:"iso800",kelvin:"3400k",note:"",img:null},{name:"C3",aperture:"F4.0",shutter:"1/60",iso:"iso800",kelvin:"3400k",note:"",img:null}],onairImg:null,onairNote:"",order:3},
+    {id:5,name:"AI EXPO 單人專訪",status:"就緒",sceneNote:"單人專訪",sceneImg:null,sceneTagPos:{},lights:[{name:"燈1",intensity:"45%",kelvin:"4200K",note:""},{name:"燈2",intensity:"10%",kelvin:"4200K",note:""},{name:"燈3",intensity:"5%",kelvin:"2700K",note:""},{name:"燈4",intensity:"3%",kelvin:"2500K",note:""}],cameras:[{name:"C1",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null},{name:"C2",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null}],onairImg:null,onairNote:"",order:4},
+    {id:6,name:"AI EXPO 雙人訪談",status:"就緒",sceneNote:"雙人訪談",sceneImg:null,sceneTagPos:{},lights:[{name:"燈1",intensity:"59%",kelvin:"4200K",note:""},{name:"燈2",intensity:"50%",kelvin:"4200K",note:""},{name:"燈3",intensity:"5%",kelvin:"4200K",note:""},{name:"燈4",intensity:"5%",kelvin:"4200K",note:""},{name:"燈5",intensity:"1%",kelvin:"2500K",note:""}],cameras:[{name:"C1",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null},{name:"C2",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null},{name:"C3",aperture:"F4.0",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null}],onairImg:null,onairNote:"",order:5},
+    {id:7,name:"展望會議 單人訪談",status:"就緒",sceneNote:"明亮、簡單，白板/反光板",sceneImg:null,sceneTagPos:{},lights:[{name:"主光",intensity:"100%",kelvin:"4800K",note:""},{name:"左輔",intensity:"50%",kelvin:"4800K",note:""},{name:"右補",intensity:"50%",kelvin:"4800K",note:"遮光片"}],cameras:[{name:"C1",aperture:"F4.0",shutter:"1/60",iso:"iso800",kelvin:"4500k",note:"",img:null},{name:"C2",aperture:"F7.1",shutter:"1/60",iso:"iso800",kelvin:"4500k",note:"",img:null}],onairImg:null,onairNote:"",order:6},
+    {id:8,name:"女人迷 公益影片",status:"就緒",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主光1",intensity:"70%",kelvin:"4200K",note:""},{name:"主光2",intensity:"60%",kelvin:"4200K",note:""},{name:"主光3",intensity:"70%",kelvin:"4200K",note:""},{name:"窗光",intensity:"31%",kelvin:"4200K",note:""},{name:"勾邊",intensity:"1%",kelvin:"2500K",note:""},{name:"植物暖光",intensity:"15%",kelvin:"2700K",note:""}],cameras:[{name:"C1",aperture:"F2.4",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null},{name:"C2",aperture:"F2.4",shutter:"1/60",iso:"iso400",kelvin:"4200k",note:"",img:null}],onairImg:null,onairNote:"",order:7},
+    {id:9,name:"Computex 展前觀察室",status:"準備中",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈1",intensity:"84%",kelvin:"4800K",note:""},{name:"主燈2",intensity:"85%",kelvin:"4800K",note:""},{name:"主燈3",intensity:"83%",kelvin:"4800K",note:""},{name:"側燈",intensity:"9%",kelvin:"3200K",note:""},{name:"補燈",intensity:"9%",kelvin:"4800K",note:""},{name:"色光1",intensity:"H210/S39",kelvin:"I7",note:""},{name:"色光2",intensity:"H214/S40",kelvin:"I11",note:""}],cameras:[{name:"C1",aperture:"F2",shutter:"1/60",iso:"6db",kelvin:"4800K",note:"",img:null},{name:"C2",aperture:"F2",shutter:"1/60",iso:"6db",kelvin:"4800K",note:"",img:null},{name:"C3",aperture:"F2",shutter:"1/60",iso:"6db",kelvin:"4800K",note:"",img:null}],onairImg:null,onairNote:"",order:8},
+    {id:10,name:"Tech666",status:"準備中",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈1",intensity:"80%",kelvin:"5000K",note:""},{name:"主燈2",intensity:"80%",kelvin:"5000K",note:""},{name:"藍光",intensity:"",kelvin:"",note:""},{name:"橘光",intensity:"",kelvin:"",note:""}],cameras:[],onairImg:null,onairNote:"",order:9},
+    {id:11,name:"Red Hat 業務專案",status:"就緒",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"100%",kelvin:"4200K",note:""},{name:"輔燈",intensity:"100%",kelvin:"4200K",note:""},{name:"背景",intensity:"40%",kelvin:"4200K",note:""},{name:"側1",intensity:"5%",kelvin:"4200K",note:""},{name:"側2",intensity:"10%",kelvin:"3000K",note:""},{name:"側3",intensity:"5%",kelvin:"4200K",note:""},{name:"側4",intensity:"10%",kelvin:"3000K",note:""}],cameras:[],onairImg:null,onairNote:"",order:10},
+    {id:12,name:"圖然說新場景",status:"就緒",sceneNote:"側邊改「藍窗框」",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈1",intensity:"100%",kelvin:"4200K",note:""},{name:"主燈2",intensity:"100%",kelvin:"4200K",note:""},{name:"色光1",intensity:"H163/S42",kelvin:"i94%",note:""},{name:"色光2",intensity:"H258/S44",kelvin:"i62%",note:""},{name:"色光3",intensity:"H216/S44",kelvin:"i18%",note:""}],cameras:[{name:"C1",aperture:"F2.2",shutter:"1/60",iso:"",kelvin:"4200k",note:"",img:null},{name:"C2",aperture:"F2.4",shutter:"1/60",iso:"",kelvin:"4200k",note:"",img:null}],onairImg:null,onairNote:"",order:11},
+    {id:13,name:"新漢 NEXOne 領袖會客室",status:"就緒",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"100%",kelvin:"3200K",note:""},{name:"輔燈",intensity:"100%",kelvin:"3200K",note:""},{name:"背景",intensity:"50%",kelvin:"3200K",note:""},{name:"側光",intensity:"6%",kelvin:"3200K",note:""},{name:"補光",intensity:"5%",kelvin:"3000K",note:""}],cameras:[],onairImg:null,onairNote:"",order:12},
+    {id:14,name:"Eric副總新節目",status:"準備中",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"100%",kelvin:"5000K",note:""},{name:"輔燈",intensity:"80%",kelvin:"5000K",note:""},{name:"補燈1",intensity:"30%",kelvin:"5000K",note:""},{name:"補燈2",intensity:"8%",kelvin:"5000K",note:""},{name:"勾邊",intensity:"10%",kelvin:"5000K",note:""}],cameras:[{name:"C1",aperture:"F2.2",shutter:"1/60",iso:"",kelvin:"4400k",note:"4K拍亮一點",img:null}],onairImg:null,onairNote:"",order:13},
+    {id:15,name:"自動化展前訪談",status:"準備中",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈1",intensity:"100%",kelvin:"4800K",note:""},{name:"主燈2",intensity:"100%",kelvin:"4800K",note:""},{name:"側燈",intensity:"5%",kelvin:"4800K",note:""},{name:"勾邊",intensity:"1%",kelvin:"3200K",note:""},{name:"補燈",intensity:"5%",kelvin:"4800K",note:""}],cameras:[],onairImg:null,onairNote:"",order:14},
+    {id:16,name:"AI EXPO 2026 創作之巔",status:"準備中",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈1",intensity:"50%",kelvin:"3200K",note:""},{name:"主燈2",intensity:"50%",kelvin:"3200K",note:""},{name:"補燈1",intensity:"4%",kelvin:"3200K",note:""},{name:"補燈2",intensity:"3%",kelvin:"3200K",note:""}],cameras:[{name:"C1",aperture:"",shutter:"",iso:"",kelvin:"3400K",note:"",img:null},{name:"C2",aperture:"",shutter:"",iso:"",kelvin:"3500K",note:"",img:null},{name:"C3",aperture:"",shutter:"",iso:"",kelvin:"3400K",note:"",img:null}],onairImg:null,onairNote:"",order:15},
+    {id:17,name:"IC之音 神話1",status:"就緒",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"50%",kelvin:"3400K",note:""},{name:"補燈1",intensity:"7%",kelvin:"3400K",note:""},{name:"補燈2",intensity:"5%",kelvin:"3400K",note:""},{name:"勾邊",intensity:"4%",kelvin:"2800K",note:""}],cameras:[],onairImg:null,onairNote:"",order:16},
+    {id:18,name:"IC之音 神話2",status:"就緒",sceneNote:"",sceneImg:null,sceneTagPos:{},lights:[{name:"主燈",intensity:"50%",kelvin:"3400K",note:""},{name:"補燈1",intensity:"7%",kelvin:"3400K",note:""},{name:"補燈2",intensity:"5%",kelvin:"3400K",note:""}],cameras:[],onairImg:null,onairNote:"",order:17},
+  ];
+  await Promise.all(D.map(p => setDoc(docRef(p.id), p)));
+})();
+
+// ── HELPERS ──
 function getP(id) { return programs.find(p=>p.id===id); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2000);
+}
 
+// ── PROGRAMS ──
 function addProgram() {
-  const name = prompt('節目名稱：'); if (!name) return;
-  const p = { id: nextId++, name, status:'準備中', sceneNote:'', sceneImg:null, sceneTagPos:{}, lights:[{name:'主燈',intensity:'',kelvin:'',note:''}], cameras:[], onairImg:null, onairNote:'' };
-  programs.push(p); activeId = p.id; activeTab='scene'; render(); save();
+  const name=prompt('節目名稱：'); if(!name) return;
+  const p={id:nextId++,name,status:'準備中',sceneNote:'',sceneImg:null,sceneTagPos:{},lights:[{name:'主燈',intensity:'',kelvin:'',note:''}],cameras:[],onairImg:null,onairNote:'',order:programs.length};
+  activeId=p.id; activeTab='scene';
+  saveProgram(p);
 }
-
 function deleteProgram(id) {
-  if (!confirm('確定刪除此節目？')) return;
-  programs = programs.filter(p=>p.id!==id);
-  activeId = programs[0]?.id;
-  render(); save();
+  if(!confirm('確定刪除此節目？')) return;
+  const rem=programs.filter(p=>p.id!==id);
+  activeId=rem[0]?.id??null;
+  removeProgram(id);
 }
 
-function navClick(e, id) {
-  if (e.target.classList.contains('drag-handle')) return;
-  activeId = id; activeTab = 'scene'; render();
-}
-
-let navDraggingId = null;
-function navDragStart(e, id) {
-  navDraggingId = id;
-  e.currentTarget.classList.add('dragging-item');
-  e.dataTransfer.effectAllowed = 'move';
-}
-function navDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  e.currentTarget.classList.add('drag-over');
-}
-function navDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-function navDrop(e, targetId) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  if (navDraggingId === targetId) return;
-  const fromIdx = programs.findIndex(p => p.id === navDraggingId);
-  const toIdx = programs.findIndex(p => p.id === targetId);
-  const [moved] = programs.splice(fromIdx, 1);
-  programs.splice(toIdx, 0, moved);
-  renderNav();
-  save();
-}
-function navDragEnd() {
-  navDraggingId = null;
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.classList.remove('dragging-item', 'drag-over');
-  });
-}
-
-function filterNav() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.style.display = el.dataset.name.includes(q) ? '' : 'none';
-  });
-}
-
-function toggleMobileNav() {
-  const list = document.getElementById('mobileNavList');
-  const btn = document.getElementById('mobileNavToggle');
-  const isOpen = list.classList.toggle('open');
-  btn.textContent = isOpen ? '✕' : '☰';
-}
-
-function closeMobileNav() {
-  document.getElementById('mobileNavList').classList.remove('open');
-  document.getElementById('mobileNavToggle').textContent = '☰';
-}
-
-function renderMobileNav() {
-  const p = getP(activeId);
-  const titleEl = document.getElementById('mobileNavTitle');
-  if (titleEl && p) titleEl.textContent = p.name;
-  const list = document.getElementById('mobileNavList');
-  if (!list) return;
-  list.innerHTML = programs.map(p => `
-    <div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}" data-name="${p.name.toLowerCase()}"
-      onclick="activeId=${p.id};activeTab='scene';closeMobileNav();render()">
-      <span class="dot"></span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
-    </div>
-  `).join('');
-}
-
+// ── RENDER ──
 function render() { renderNav(); renderMobileNav(); renderMain(); }
 
 function renderNav() {
-  const nav = document.getElementById('navList');
-  nav.innerHTML = programs.map(p => `
-    <div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}" data-name="${p.name.toLowerCase()}"
-      draggable="true"
-      ondragstart="navDragStart(event,${p.id})"
-      ondragover="navDragOver(event)"
-      ondragleave="navDragLeave(event)"
-      ondrop="navDrop(event,${p.id})"
-      ondragend="navDragEnd()"
-      onclick="navClick(event,${p.id})">
-      <span class="drag-handle" title="拖移排序">⠿</span>
+  const nav=document.getElementById('navList'); if(!nav) return;
+  nav.innerHTML=programs.map(p=>`
+    <div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}" data-name="${esc(p.name.toLowerCase())}"
+      draggable="true" onclick="navClick(event,${p.id})"
+      ondragstart="navDragStart(event,${p.id})" ondragover="navDragOver(event)"
+      ondragleave="navDragLeave(event)" ondrop="navDrop(event,${p.id})" ondragend="navDragEnd()">
+      <span class="drag-handle">⠿</span>
       <span class="dot"></span>
       <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
+function renderMobileNav() {
+  const p=getP(activeId);
+  const t=document.getElementById('mobileNavTitle'); if(t&&p) t.textContent=p.name;
+  const list=document.getElementById('mobileNavList'); if(!list) return;
+  list.innerHTML=programs.map(p=>`
+    <div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}"
+      onclick="setActiveId(${p.id});setActiveTab('scene');closeMobileNav();render()">
+      <span class="dot"></span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
+    </div>`).join('');
+}
 function renderMain() {
-  const p = getP(activeId);
-  const area = document.getElementById('mainArea');
-  if (!p) { area.innerHTML = '<div style="padding:40px;color:var(--text3);font-size:14px;">請選擇或新增節目</div>'; return; }
-
-  area.innerHTML = `
+  const p=getP(activeId), area=document.getElementById('mainArea'); if(!area) return;
+  if(!p){area.innerHTML='<div style="padding:40px;color:#555;font-size:14px;">請選擇或新增節目</div>';return;}
+  area.innerHTML=`
     <div class="main-header">
       <div class="main-header-left">
-        <input class="editable-title" value="${esc(p.name)}" oninput="getP(${p.id}).name=this.value;renderNav()">
-        <input class="scene-note-input" placeholder="場景說明備註…" value="${esc(p.sceneNote)}" oninput="getP(${p.id}).sceneNote=this.value">
+        <input class="editable-title" value="${esc(p.name)}"
+          oninput="getP(${p.id}).name=this.value;renderNav();renderMobileNav();debouncedSave(getP(${p.id}))">
+        <input class="scene-note-input" placeholder="場景說明備註…" value="${esc(p.sceneNote)}"
+          oninput="getP(${p.id}).sceneNote=this.value;debouncedSave(getP(${p.id}))">
       </div>
       <div class="header-actions">
-        <select class="status-sel" onchange="getP(${p.id}).status=this.value">
+        <select class="status-sel" onchange="getP(${p.id}).status=this.value;saveProgram(getP(${p.id}))">
           ${['準備中','調整中','就緒','上線中','封存'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
         </select>
-        <button class="btn btn-primary" onclick="save()">儲存</button>
+        <button class="btn btn-primary" onclick="saveProgram(getP(${p.id}))">儲存</button>
         <button class="btn btn-danger" onclick="deleteProgram(${p.id})">刪除</button>
       </div>
     </div>
     <div class="section-tabs">
-      <div class="stab ${activeTab==='scene'?'active':''}" onclick="activeTab='scene';renderMain()">場景圖 ＋ 燈光</div>
-      <div class="stab ${activeTab==='camera'?'active':''}" onclick="activeTab='camera';renderMain()">攝影機設定</div>
-      <div class="stab ${activeTab==='onair'?'active':''}" onclick="activeTab='onair';renderMain()">上線畫面</div>
+      <div class="stab ${activeTab==='scene'?'active':''}" onclick="setActiveTab('scene');renderMain()">場景圖 ＋ 燈光</div>
+      <div class="stab ${activeTab==='camera'?'active':''}" onclick="setActiveTab('camera');renderMain()">攝影機設定</div>
+      <div class="stab ${activeTab==='onair'?'active':''}" onclick="setActiveTab('onair');renderMain()">上線畫面</div>
     </div>
-    ${activeTab==='scene' ? renderScene(p) : activeTab==='camera' ? renderCamera(p) : renderOnair(p)}
-  `;
-
-  // bind drag on tags after render
-  if (activeTab==='scene' && p.sceneImg) bindTagDrag(p);
+    ${activeTab==='scene'?renderScene(p):activeTab==='camera'?renderCamera(p):renderOnair(p)}`;
 }
 
 function renderScene(p) {
-  const tags = p.lights.map((l,i) => {
-    const pos = p.sceneTagPos[i] || { left: (10 + i*120) + 'px', top: (10 + (i%3)*44) + 'px' };
-    return `<div class="light-tag" id="ltag-${i}" data-idx="${i}"
-      style="left:${pos.left};top:${pos.top}"
-      onmousedown="startDrag(event,${p.id},${i})"
-      ontouchstart="startTouchDrag(event,${p.id},${i})">
-      <span class="tag-dot"></span>
-      <span class="tag-name">${esc(l.name)}</span>
+  const tags=p.lights.map((l,i)=>{
+    const pos=(p.sceneTagPos||{})[i]||{left:(10+i*120)+'px',top:(10+(i%3)*44)+'px'};
+    return `<div class="light-tag" id="ltag-${i}" style="left:${pos.left};top:${pos.top}"
+      onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
+      <span class="tag-dot"></span><span class="tag-name">${esc(l.name)}</span>
       <span class="tag-values">
-        <span class="tag-val" title="點擊編輯強度" contenteditable="true"
-          onblur="getP(${p.id}).lights[${i}].intensity=this.innerText.trim()"
+        <span class="tag-val" contenteditable="true"
+          onblur="getP(${p.id}).lights[${i}].intensity=this.innerText.trim();debouncedSave(getP(${p.id}))"
           onclick="event.stopPropagation()">${esc(l.intensity||'—')}</span>
         <span class="tag-sep">/</span>
-        <span class="tag-val" title="點擊編輯色溫" contenteditable="true"
-          onblur="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim()"
+        <span class="tag-val" contenteditable="true"
+          onblur="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim();debouncedSave(getP(${p.id}))"
           onclick="event.stopPropagation()">${esc(l.kelvin||'—')}</span>
-      </span>
-    </div>`;
-  }).join('');
-
-  const imgContent = p.sceneImg
-    ? `<img src="${p.sceneImg}" draggable="false"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('sceneFile${p.id}').click()">更換圖片</span>${tags}`
-    : `<div class="upload-hint"><span>＋</span><span>點擊上傳場景圖</span><span style="font-size:11px;margin-top:4px;">上傳後可在照片上拖移燈光數值標籤</span></div>`;
-
-  const lightCards = p.lights.map((l,i) => `
+      </span></div>`;}).join('');
+  const imgContent=p.sceneImg
+    ?`<img src="${p.sceneImg}" draggable="false">
+      <span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('sceneFile${p.id}').click()">更換圖片</span>${tags}`
+    :`<div class="upload-hint"><span>＋</span><span>點擊上傳場景圖</span><span style="font-size:11px;margin-top:4px">上傳後可在照片上拖移燈光標籤</span></div>`;
+  const lightCards=p.lights.map((l,i)=>`
     <div class="light-card">
       <div class="light-card-top">
         <input class="light-card-name" value="${esc(l.name)}" placeholder="燈具名稱"
-          oninput="getP(${p.id}).lights[${i}].name=this.value;updateTag(${p.id},${i})">
-        <button class="rm-btn" onclick="removeLight(${p.id},${i})" title="移除">✕</button>
+          oninput="getP(${p.id}).lights[${i}].name=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))">
+        <button class="rm-btn" onclick="removeLight(${p.id},${i})">✕</button>
       </div>
       <div class="light-fields">
-        <div class="lf"><label>強度</label>
-          <input value="${esc(l.intensity)}" placeholder="75%"
-            oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i})"></div>
-        <div class="lf"><label>色溫</label>
-          <input value="${esc(l.kelvin)}" placeholder="4200K"
-            oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i})"></div>
-        <div class="lf full"><label>備註</label>
-          <input value="${esc(l.note||'')}" placeholder="選填"
-            oninput="getP(${p.id}).lights[${i}].note=this.value"></div>
+        <div class="lf"><label>強度</label><input value="${esc(l.intensity)}" placeholder="75%"
+          oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>色溫</label><input value="${esc(l.kelvin)}" placeholder="4200K"
+          oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
+          oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>
-    </div>
-  `).join('');
-
-  return `
-    <div class="panel active">
-      <div class="sec-label">場景圖</div>
-      <div class="overlay-zone" id="sceneZone${p.id}" onclick="if(!event.target.closest('.light-tag'))document.getElementById('sceneFile${p.id}').click()">
-        ${imgContent}
-      </div>
-      <input type="file" accept="image/*" id="sceneFile${p.id}" onchange="handleImg(${p.id},'sceneImg',this)">
-
-      <div class="panel-gap">
-        <div class="sec-label">燈光設定</div>
-        <div class="lights-grid">${lightCards}</div>
-        <button class="add-light-btn" onclick="addLight(${p.id})">＋ 新增燈光</button>
-      </div>
-    </div>`;
+    </div>`).join('');
+  return `<div class="panel active">
+    <div class="sec-label">場景圖</div>
+    <div class="overlay-zone" id="sceneZone${p.id}"
+      onclick="if(!event.target.closest('.light-tag'))document.getElementById('sceneFile${p.id}').click()">
+      ${imgContent}</div>
+    <input type="file" accept="image/*" id="sceneFile${p.id}" style="display:none" onchange="handleImg(${p.id},'sceneImg',this)">
+    <div class="panel-gap"><div class="sec-label">燈光設定</div>
+      <div class="lights-grid">${lightCards}</div>
+      <button class="add-light-btn" onclick="addLight(${p.id})">＋ 新增燈光</button>
+    </div></div>`;
 }
 
 function renderCamera(p) {
-  const cards = p.cameras.map((c,i) => `
+  const cards=p.cameras.map((c,i)=>`
     <div class="cam-card">
       <div class="cam-card-header">
-        <input class="cam-name" value="${esc(c.name)}" oninput="getP(${p.id}).cameras[${i}].name=this.value">
+        <input class="cam-name" value="${esc(c.name)}" oninput="getP(${p.id}).cameras[${i}].name=this.value;debouncedSave(getP(${p.id}))">
         <button class="rm-btn" onclick="removeCam(${p.id},${i})">✕</button>
       </div>
       <div class="cam-fields">
-        <div class="cam-field"><label>光圈</label><input value="${esc(c.aperture)}" placeholder="F2.8" oninput="getP(${p.id}).cameras[${i}].aperture=this.value"></div>
-        <div class="cam-field"><label>快門</label><input value="${esc(c.shutter)}" placeholder="1/60" oninput="getP(${p.id}).cameras[${i}].shutter=this.value"></div>
-        <div class="cam-field"><label>ISO / dB</label><input value="${esc(c.iso)}" placeholder="iso800" oninput="getP(${p.id}).cameras[${i}].iso=this.value"></div>
-        <div class="cam-field"><label>色溫</label><input value="${esc(c.kelvin)}" placeholder="4200k" oninput="getP(${p.id}).cameras[${i}].kelvin=this.value"></div>
-        <div class="cam-field full"><label>備註</label><input value="${esc(c.note||'')}" placeholder="用途說明" oninput="getP(${p.id}).cameras[${i}].note=this.value"></div>
+        <div class="cam-field"><label>光圈</label><input value="${esc(c.aperture)}" placeholder="F2.8" oninput="getP(${p.id}).cameras[${i}].aperture=this.value;debouncedSave(getP(${p.id}))"></div>
+        <div class="cam-field"><label>快門</label><input value="${esc(c.shutter)}" placeholder="1/60" oninput="getP(${p.id}).cameras[${i}].shutter=this.value;debouncedSave(getP(${p.id}))"></div>
+        <div class="cam-field"><label>ISO / dB</label><input value="${esc(c.iso)}" placeholder="iso800" oninput="getP(${p.id}).cameras[${i}].iso=this.value;debouncedSave(getP(${p.id}))"></div>
+        <div class="cam-field"><label>色溫</label><input value="${esc(c.kelvin)}" placeholder="4200k" oninput="getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"></div>
+        <div class="cam-field full"><label>備註</label><input value="${esc(c.note||'')}" placeholder="用途說明" oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>
       <div class="cam-img-zone" onclick="document.getElementById('camFile${p.id}_${i}').click()">
-        ${c.img ? `<img src="${c.img}">` : `<div class="cam-img-hint">＋ 上傳畫面截圖</div>`}
+        ${c.img?`<img src="${c.img}">`:`<div class="cam-img-hint">＋ 上傳畫面截圖</div>`}
       </div>
       <input type="file" accept="image/*" id="camFile${p.id}_${i}" style="display:none" onchange="handleCamImg(${p.id},${i},this)">
-    </div>
-  `).join('');
-
-  return `
-    <div class="panel active">
-      <div class="sec-label">攝影機設定</div>
-      <div class="cam-grid">${cards}</div>
-      <button class="cam-add-btn" onclick="addCam(${p.id})">＋ 新增攝影機</button>
-    </div>`;
+    </div>`).join('');
+  return `<div class="panel active"><div class="sec-label">攝影機設定</div>
+    <div class="cam-grid">${cards}</div>
+    <button class="cam-add-btn" onclick="addCam(${p.id})">＋ 新增攝影機</button></div>`;
 }
 
 function renderOnair(p) {
-  const imgContent = p.onairImg
-    ? `<img src="${p.onairImg}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('onairFile${p.id}').click()">更換圖片</span>`
-    : `<div class="onair-hint"><span>🎬</span><span>點擊上傳上線畫面</span></div>`;
-  return `
-    <div class="panel active">
-      <div class="sec-label">上線畫面</div>
-      <div class="onair-zone" onclick="document.getElementById('onairFile${p.id}').click()">
-        ${imgContent}
-      </div>
-      <input type="file" accept="image/*" id="onairFile${p.id}" style="display:none" onchange="handleImg(${p.id},'onairImg',this)">
-      <textarea class="note-area" rows="4" placeholder="上線備註、注意事項…"
-        oninput="getP(${p.id}).onairNote=this.value">${esc(p.onairNote)}</textarea>
-    </div>`;
+  const imgContent=p.onairImg
+    ?`<img src="${p.onairImg}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('onairFile${p.id}').click()">更換圖片</span>`
+    :`<div class="onair-hint"><span>🎬</span><span>點擊上傳上線畫面</span></div>`;
+  return `<div class="panel active"><div class="sec-label">上線畫面</div>
+    <div class="onair-zone" onclick="document.getElementById('onairFile${p.id}').click()">${imgContent}</div>
+    <input type="file" accept="image/*" id="onairFile${p.id}" style="display:none" onchange="handleImg(${p.id},'onairImg',this)">
+    <textarea class="note-area" rows="4" placeholder="上線備註、注意事項…"
+      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote)}</textarea></div>`;
 }
 
-function handleImg(id, field, input) {
-  const file = input.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = e => { getP(id)[field] = e.target.result; renderMain(); save(); };
+// ── IMAGE ──
+function handleImg(id,field,input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{const p=getP(id);p[field]=e.target.result;renderMain();saveProgram(p);};
+  r.readAsDataURL(file);
+}
+function handleCamImg(id,idx,input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{const p=getP(id);p.cameras[idx].img=e.target.result;renderMain();saveProgram(p);};
   r.readAsDataURL(file);
 }
 
-function handleCamImg(id, idx, input) {
-  const file = input.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = e => { getP(id).cameras[idx].img = e.target.result; renderMain(); save(); };
-  r.readAsDataURL(file);
+// ── LIGHTS/CAMS ──
+function addLight(id){const p=getP(id);p.lights.push({name:`燈${p.lights.length+1}`,intensity:'',kelvin:'',note:''});renderMain();saveProgram(p);}
+function removeLight(id,idx){const p=getP(id);p.lights.splice(idx,1);if(!p.sceneTagPos)p.sceneTagPos={};delete p.sceneTagPos[idx];renderMain();saveProgram(p);}
+function addCam(id){const p=getP(id);p.cameras.push({name:`C${p.cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});renderMain();saveProgram(p);}
+function removeCam(id,idx){const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);}
+
+// ── TAG SYNC ──
+function updateTag(pid,idx){
+  const el=document.getElementById(`ltag-${idx}`);if(!el)return;
+  const l=getP(pid).lights[idx];
+  const vals=el.querySelectorAll('.tag-val');
+  if(vals[0]&&document.activeElement!==vals[0])vals[0].innerText=l.intensity||'—';
+  if(vals[1]&&document.activeElement!==vals[1])vals[1].innerText=l.kelvin||'—';
+  el.querySelector('.tag-name').textContent=l.name;
 }
 
-function addLight(id) {
-  getP(id).lights.push({name:`燈${getP(id).lights.length+1}`,intensity:'',kelvin:'',note:''});
-  renderMain();
+// ── DRAG TAGS ──
+function startDrag(e,pid,idx){if(e.target.getAttribute('contenteditable')==='true')return;e.preventDefault();dragging={pid,idx};const tag=document.getElementById(`ltag-${idx}`),rect=tag.getBoundingClientRect();dragOffX=e.clientX-rect.left;dragOffY=e.clientY-rect.top;}
+function startTouchDrag(e,pid,idx){if(e.target.getAttribute('contenteditable')==='true')return;const t=e.touches[0];dragging={pid,idx};const tag=document.getElementById(`ltag-${idx}`),rect=tag.getBoundingClientRect();dragOffX=t.clientX-rect.left;dragOffY=t.clientY-rect.top;}
+function moveDraggingTag(cx,cy){
+  const zone=document.getElementById(`sceneZone${dragging.pid}`);if(!zone)return;
+  const zr=zone.getBoundingClientRect(),tag=document.getElementById(`ltag-${dragging.idx}`);
+  const left=Math.max(0,Math.min(cx-zr.left-dragOffX,zr.width-tag.offsetWidth));
+  const top =Math.max(0,Math.min(cy-zr.top -dragOffY,zr.height-tag.offsetHeight));
+  tag.style.left=left+'px';tag.style.top=top+'px';
+  const p=getP(dragging.pid);if(!p.sceneTagPos)p.sceneTagPos={};
+  p.sceneTagPos[dragging.idx]={left:left+'px',top:top+'px'};
 }
-function removeLight(id, idx) {
-  getP(id).lights.splice(idx,1);
-  const p=getP(id); delete p.sceneTagPos[idx];
-  renderMain();
+document.addEventListener('mousemove',e=>{if(dragging)moveDraggingTag(e.clientX,e.clientY);});
+document.addEventListener('mouseup',()=>{if(dragging){saveProgram(getP(dragging.pid));dragging=null;}});
+document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDraggingTag(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
+document.addEventListener('touchend',()=>{if(dragging){saveProgram(getP(dragging.pid));dragging=null;}});
+
+// ── NAV DRAG ──
+function navClick(e,id){if(e.target.classList.contains('drag-handle'))return;activeId=id;activeTab='scene';render();}
+function navDragStart(e,id){navDraggingId=id;e.currentTarget.classList.add('dragging-item');e.dataTransfer.effectAllowed='move';}
+function navDragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function navDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function navDrop(e,tid){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  if(navDraggingId===tid)return;
+  const fi=programs.findIndex(p=>p.id===navDraggingId),ti=programs.findIndex(p=>p.id===tid);
+  const[moved]=programs.splice(fi,1);programs.splice(ti,0,moved);
+  renderNav();saveOrder();
 }
-function addCam(id) {
-  getP(id).cameras.push({name:`C${getP(id).cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});
-  renderMain();
-}
-function removeCam(id,idx) { getP(id).cameras.splice(idx,1); renderMain(); }
+function navDragEnd(){navDraggingId=null;document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('dragging-item','drag-over'));}
 
-// Live tag sync (no full re-render)
-function updateTag(pid, idx) {
-  const el = document.getElementById(`ltag-${idx}`); if (!el) return;
-  const l = getP(pid).lights[idx];
-  const vals = el.querySelectorAll('.tag-val');
-  if (vals[0] && document.activeElement !== vals[0]) vals[0].innerText = l.intensity||'—';
-  if (vals[1] && document.activeElement !== vals[1]) vals[1].innerText = l.kelvin||'—';
-  el.querySelector('.tag-name').textContent = l.name;
-}
+// ── MOBILE ──
+function toggleMobileNav(){const l=document.getElementById('mobileNavList'),b=document.getElementById('mobileNavToggle');const o=l.classList.toggle('open');b.textContent=o?'✕':'☰';}
+function closeMobileNav(){document.getElementById('mobileNavList').classList.remove('open');document.getElementById('mobileNavToggle').textContent='☰';}
+function filterNav(){const q=document.getElementById('searchInput').value.toLowerCase();document.querySelectorAll('#navList .nav-item').forEach(el=>{el.style.display=el.dataset.name.includes(q)?'':''});}
 
-// DRAG (mouse)
-function startDrag(e, pid, idx) {
-  if (e.target.getAttribute('contenteditable') === 'true') return;
-  e.preventDefault();
-  dragging = { pid, idx };
-  const tag = document.getElementById(`ltag-${idx}`);
-  const rect = tag.getBoundingClientRect();
-  dragOffX = e.clientX - rect.left;
-  dragOffY = e.clientY - rect.top;
-}
-
-document.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  moveDraggingTag(e.clientX, e.clientY);
-});
-document.addEventListener('mouseup', () => { dragging = null; });
-
-// DRAG (touch)
-function startTouchDrag(e, pid, idx) {
-  if (e.target.getAttribute('contenteditable') === 'true') return;
-  const touch = e.touches[0];
-  dragging = { pid, idx };
-  const tag = document.getElementById(`ltag-${idx}`);
-  const rect = tag.getBoundingClientRect();
-  dragOffX = touch.clientX - rect.left;
-  dragOffY = touch.clientY - rect.top;
-}
-
-document.addEventListener('touchmove', e => {
-  if (!dragging) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  moveDraggingTag(touch.clientX, touch.clientY);
-}, { passive: false });
-document.addEventListener('touchend', () => { dragging = null; });
-
-function moveDraggingTag(clientX, clientY) {
-  const zone = document.getElementById(`sceneZone${dragging.pid}`);
-  if (!zone) return;
-  const zr = zone.getBoundingClientRect();
-  const tag = document.getElementById(`ltag-${dragging.idx}`);
-  let left = clientX - zr.left - dragOffX;
-  let top  = clientY - zr.top  - dragOffY;
-  left = Math.max(0, Math.min(left, zr.width  - tag.offsetWidth));
-  top  = Math.max(0, Math.min(top,  zr.height - tag.offsetHeight));
-  tag.style.left = left + 'px';
-  tag.style.top  = top  + 'px';
-  getP(dragging.pid).sceneTagPos[dragging.idx] = { left: left+'px', top: top+'px' };
-}
-
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-render();
+// expose to inline handlers — iOS Safari 不支援 Object.assign getter/setter
+// 改用直接函式包裝，確保讀寫的是 module 內部變數
+window.addProgram     = addProgram;
+window.deleteProgram  = deleteProgram;
+window.addLight       = addLight;
+window.removeLight    = removeLight;
+window.addCam         = addCam;
+window.removeCam      = removeCam;
+window.handleImg      = handleImg;
+window.handleCamImg   = handleCamImg;
+window.updateTag      = updateTag;
+window.debouncedSave  = debouncedSave;
+window.saveProgram    = saveProgram;
+window.getP           = getP;
+window.startDrag      = startDrag;
+window.startTouchDrag = startTouchDrag;
+window.navClick       = navClick;
+window.navDragStart   = navDragStart;
+window.navDragOver    = navDragOver;
+window.navDragLeave   = navDragLeave;
+window.navDrop        = navDrop;
+window.navDragEnd     = navDragEnd;
+window.toggleMobileNav = toggleMobileNav;
+window.closeMobileNav  = closeMobileNav;
+window.filterNav      = filterNav;
+window.renderMain     = renderMain;
+window.renderNav      = renderNav;
+window.renderMobileNav = renderMobileNav;
+window.render         = render;
+// activeTab / activeId: 讓 inline handler 讀寫時透過函式操作 module 變數
+window.setActiveTab   = v => { activeTab = v; };
+window.setActiveId    = v => { activeId  = v; };
+window.getActiveTab   = ()  => activeTab;
+window.getActiveId    = ()  => activeId;
 </script>
 </body>
 </html>
