@@ -66,13 +66,31 @@
   .sec-label::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
   .panel-gap { margin-top: 24px; }
 
-  .overlay-zone { position: relative; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; min-height: 240px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
-  .overlay-zone img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .overlay-zone .upload-hint { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #777; font-size: 13px; pointer-events: none; }
-  .overlay-zone .upload-hint span:first-child { font-size: 28px; }
-  .overlay-zone input[type=file] { display: none; }
-  .img-change-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #ccc; font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); display: none; }
-  .overlay-zone:hover .img-change-btn { display: block; }
+  /* ── GALLERY SLIDER ── */
+  .gallery-wrap { position: relative; }
+  .gallery-slider { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 10px; scrollbar-width: thin; scrollbar-color: #444 transparent; }
+  .gallery-slider::-webkit-scrollbar { height: 4px; }
+  .gallery-slider::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+  .gallery-slide { position: relative; flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; }
+  .gallery-slide img { width: 100%; max-height: 420px; object-fit: contain; display: block; background: #2e2e2e; }
+  .gallery-slide .slide-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: rgba(0,0,0,0.6); font-size: 12px; color: #ccc; display: flex; align-items: center; justify-content: space-between; }
+  .gallery-slide .slide-label input { background: none; border: none; color: #eee; font-size: 12px; font-family: inherit; outline: none; flex: 1; min-width: 0; }
+  .gallery-slide .slide-del { background: none; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
+  .gallery-slide .slide-del:hover { color: var(--red); }
+  /* Light tags live on the active slide only */
+  .gallery-slide .light-tag { position: absolute; }
+  .gallery-add-slide { flex-shrink: 0; width: 140px; min-height: 200px; border-radius: var(--radius); border: 1px dashed rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #666; font-size: 12px; cursor: pointer; transition: all 0.15s; scroll-snap-align: start; background: rgba(255,255,255,0.02); }
+  .gallery-add-slide:hover { border-color: var(--accent); color: var(--accent); }
+  .gallery-add-slide span:first-child { font-size: 24px; }
+  /* Onair slides — same layout but taller */
+  .onair-slide { position: relative; flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; cursor: pointer; }
+  .onair-slide img { width: 100%; max-height: 460px; object-fit: contain; display: block; background: #2e2e2e; }
+  .onair-slide .slide-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: rgba(0,0,0,0.6); font-size: 12px; color: #ccc; display: flex; align-items: center; justify-content: space-between; }
+  .onair-slide .slide-label input { background: none; border: none; color: #eee; font-size: 12px; font-family: inherit; outline: none; flex: 1; min-width: 0; }
+  .onair-slide-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #666; font-size: 13px; min-height: 260px; }
+  @media (max-width: 600px) {
+    .gallery-slide, .onair-slide { width: 88%; }
+  }
 
   .light-tag { position: absolute; background: rgba(0,0,0,0.82); border: 1px solid var(--accent); border-radius: 20px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; cursor: move; user-select: none; backdrop-filter: blur(4px); min-width: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
   .light-tag .tag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
@@ -171,7 +189,7 @@
     .lf input, .cam-field input { font-size: 16px; padding: 9px 10px; }
     .light-card-name, .cam-name { font-size: 15px; }
     .note-area { font-size: 16px; }
-    .overlay-zone { min-height: 180px; }
+    .overlay-zone { min-height: 180px; }  /* legacy - unused */
     .onair-zone { min-height: 200px; }
     .img-change-btn { display: block !important; }
     .toast { bottom: 120px; }
@@ -378,7 +396,9 @@ function renderMain() {
 }
 
 function renderScene(p) {
-  const tags=p.lights.map((l,i)=>{
+  if (!p.sceneImgs) p.sceneImgs = p.sceneImg ? [{src:p.sceneImg,label:'佈光圖'}] : [];
+
+  const tags = p.lights.map((l,i)=>{
     const pos=(p.sceneTagPos||{})[i]||{left:(10+i*120)+'px',top:(10+(i%3)*44)+'px'};
     return `<div class="light-tag" id="ltag-${i}" style="left:${pos.left};top:${pos.top}"
       onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
@@ -392,11 +412,20 @@ function renderScene(p) {
           onblur="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim();debouncedSave(getP(${p.id}))"
           onclick="event.stopPropagation()">${esc(l.kelvin||'—')}</span>
       </span></div>`;}).join('');
-  const imgContent=p.sceneImg
-    ?`<img src="${p.sceneImg}" draggable="false">
-      <span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('sceneFile${p.id}').click()">更換圖片</span>${tags}`
-    :`<div class="upload-hint"><span>＋</span><span>點擊上傳場景圖</span><span style="font-size:11px;margin-top:4px">上傳後可在照片上拖移燈光標籤</span></div>`;
-  const lightCards=p.lights.map((l,i)=>`
+
+  const slides = p.sceneImgs.map((img,i)=>`
+    <div class="gallery-slide" id="sceneZone${p.id}_${i}">
+      <img src="${img.src}" draggable="false">
+      ${i===0 ? tags : ''}
+      <div class="slide-label">
+        <input value="${esc(img.label||'')}" placeholder="圖片說明（佈光圖、場佈圖…）"
+          oninput="getP(${p.id}).sceneImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
+          onclick="event.stopPropagation()">
+        <button class="slide-del" onclick="removeSceneImg(${p.id},${i})">✕</button>
+      </div>
+    </div>`).join('');
+
+  const lightCards = p.lights.map((l,i)=>`
     <div class="light-card">
       <div class="light-card-top">
         <input class="light-card-name" value="${esc(l.name)}" placeholder="燈具名稱"
@@ -412,18 +441,53 @@ function renderScene(p) {
           oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>
     </div>`).join('');
+
   return `<div class="panel active">
-    <div class="sec-label">場景圖</div>
-    <div class="overlay-zone" id="sceneZone${p.id}"
-      onclick="if(!event.target.closest('.light-tag'))document.getElementById('sceneFile${p.id}').click()">
-      ${imgContent}</div>
-    <input type="file" accept="image/*" id="sceneFile${p.id}" style="display:none" onchange="handleImg(${p.id},'sceneImg',this)">
-    <div class="panel-gap"><div class="sec-label">燈光設定</div>
+    <div class="sec-label">場景圖片 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動・第一張可拖移燈光標籤 →</span></div>
+    <div class="gallery-slider" id="sceneSlider${p.id}">
+      ${slides}
+      <div class="gallery-add-slide" onclick="document.getElementById('sceneFileAdd${p.id}').click()">
+        <span>＋</span><span>新增圖片</span>
+      </div>
+    </div>
+    <input type="file" accept="image/*" multiple id="sceneFileAdd${p.id}" style="display:none"
+      onchange="addSceneImgs(${p.id},this)">
+    <div class="panel-gap">
+      <div class="sec-label">燈光設定</div>
       <div class="lights-grid">${lightCards}</div>
       <button class="add-light-btn" onclick="addLight(${p.id})">＋ 新增燈光</button>
-    </div></div>`;
+    </div>
+  </div>`;
 }
 
+function renderOnair(p) {
+  if (!p.onairImgs) p.onairImgs = p.onairImg ? [{src:p.onairImg,label:'上線畫面'}] : [];
+
+  const slides = p.onairImgs.map((img,i)=>`
+    <div class="onair-slide">
+      <img src="${img.src}">
+      <div class="slide-label">
+        <input value="${esc(img.label||'')}" placeholder="畫面說明（A Cam、B Cam…）"
+          oninput="getP(${p.id}).onairImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
+          onclick="event.stopPropagation()">
+        <button class="slide-del" onclick="removeOnairImg(${p.id},${i})">✕</button>
+      </div>
+    </div>`).join('');
+
+  return `<div class="panel active">
+    <div class="sec-label">上線畫面 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動瀏覽 →</span></div>
+    <div class="gallery-slider" id="onairSlider${p.id}">
+      ${slides}
+      <div class="gallery-add-slide" onclick="document.getElementById('onairFileAdd${p.id}').click()">
+        <span>🎬</span><span>新增畫面</span>
+      </div>
+    </div>
+    <input type="file" accept="image/*" multiple id="onairFileAdd${p.id}" style="display:none"
+      onchange="addOnairImgs(${p.id},this)">
+    <textarea class="note-area" rows="4" placeholder="上線備註、注意事項…"
+      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote)}</textarea>
+  </div>`;
+}
 function renderCamera(p) {
   const cards=p.cameras.map((c,i)=>`
     <div class="cam-card">
@@ -448,23 +512,52 @@ function renderCamera(p) {
     <button class="cam-add-btn" onclick="addCam(${p.id})">＋ 新增攝影機</button></div>`;
 }
 
-function renderOnair(p) {
-  const imgContent=p.onairImg
-    ?`<img src="${p.onairImg}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('onairFile${p.id}').click()">更換圖片</span>`
-    :`<div class="onair-hint"><span>🎬</span><span>點擊上傳上線畫面</span></div>`;
-  return `<div class="panel active"><div class="sec-label">上線畫面</div>
-    <div class="onair-zone" onclick="document.getElementById('onairFile${p.id}').click()">${imgContent}</div>
-    <input type="file" accept="image/*" id="onairFile${p.id}" style="display:none" onchange="handleImg(${p.id},'onairImg',this)">
-    <textarea class="note-area" rows="4" placeholder="上線備註、注意事項…"
-      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote)}</textarea></div>`;
-}
-
-// ── IMAGE ──
-function handleImg(id,field,input){
-  const file=input.files[0];if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{const p=getP(id);p[field]=e.target.result;renderMain();saveProgram(p);};
+// ── IMAGE HANDLERS ──
+function handleImg(id, field, input) {
+  const file = input.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => { const p = getP(id); p[field] = e.target.result; renderMain(); saveProgram(p); };
   r.readAsDataURL(file);
+}
+function addSceneImgs(id, input) {
+  const p = getP(id);
+  if (!p.sceneImgs) p.sceneImgs = [];
+  const files = Array.from(input.files);
+  let done = 0;
+  files.forEach(file => {
+    const r = new FileReader();
+    r.onload = e => {
+      p.sceneImgs.push({src: e.target.result, label: file.name.replace(/\.[^.]+$/, '')});
+      done++;
+      if (done === files.length) { renderMain(); saveProgram(p); }
+    };
+    r.readAsDataURL(file);
+  });
+}
+function removeSceneImg(id, idx) {
+  const p = getP(id);
+  p.sceneImgs.splice(idx, 1);
+  renderMain(); saveProgram(p);
+}
+function addOnairImgs(id, input) {
+  const p = getP(id);
+  if (!p.onairImgs) p.onairImgs = [];
+  const files = Array.from(input.files);
+  let done = 0;
+  files.forEach(file => {
+    const r = new FileReader();
+    r.onload = e => {
+      p.onairImgs.push({src: e.target.result, label: file.name.replace(/\.[^.]+$/, '')});
+      done++;
+      if (done === files.length) { renderMain(); saveProgram(p); }
+    };
+    r.readAsDataURL(file);
+  });
+}
+function removeOnairImg(id, idx) {
+  const p = getP(id);
+  p.onairImgs.splice(idx, 1);
+  renderMain(); saveProgram(p);
 }
 function handleCamImg(id,idx,input){
   const file=input.files[0];if(!file)return;
@@ -493,7 +586,7 @@ function updateTag(pid,idx){
 function startDrag(e,pid,idx){if(e.target.getAttribute('contenteditable')==='true')return;e.preventDefault();dragging={pid,idx};const tag=document.getElementById(`ltag-${idx}`),rect=tag.getBoundingClientRect();dragOffX=e.clientX-rect.left;dragOffY=e.clientY-rect.top;}
 function startTouchDrag(e,pid,idx){if(e.target.getAttribute('contenteditable')==='true')return;const t=e.touches[0];dragging={pid,idx};const tag=document.getElementById(`ltag-${idx}`),rect=tag.getBoundingClientRect();dragOffX=t.clientX-rect.left;dragOffY=t.clientY-rect.top;}
 function moveDraggingTag(cx,cy){
-  const zone=document.getElementById(`sceneZone${dragging.pid}`);if(!zone)return;
+  const zone=document.getElementById(`sceneZone${dragging.pid}_0`);if(!zone)return;
   const zr=zone.getBoundingClientRect(),tag=document.getElementById(`ltag-${dragging.idx}`);
   const left=Math.max(0,Math.min(cx-zr.left-dragOffX,zr.width-tag.offsetWidth));
   const top =Math.max(0,Math.min(cy-zr.top -dragOffY,zr.height-tag.offsetHeight));
@@ -534,7 +627,11 @@ window.removeLight    = removeLight;
 window.addCam         = addCam;
 window.removeCam      = removeCam;
 window.handleImg      = handleImg;
-window.handleCamImg   = handleCamImg;
+window.addSceneImgs    = addSceneImgs;
+window.removeSceneImg  = removeSceneImg;
+window.addOnairImgs    = addOnairImgs;
+window.removeOnairImg  = removeOnairImg;
+window.handleCamImg    = handleCamImg;
 window.updateTag      = updateTag;
 window.debouncedSave  = debouncedSave;
 window.saveProgram    = saveProgram;
