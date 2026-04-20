@@ -237,6 +237,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, getDocs }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL, deleteObject }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const app = initializeApp({
   apiKey: "AIzaSyAA_lBeMcU_MHwBIakycWMY1qVFQpNFlLw",
@@ -247,6 +249,7 @@ const app = initializeApp({
   appId: "1:453498810482:web:265ae1a1aac433355e52eb"
 });
 const db = getFirestore(app);
+const storage = getStorage(app);
 const COL = 'programs';
 const colRef = () => collection(db, COL);
 const docRef = id => doc(db, COL, String(id));
@@ -280,8 +283,18 @@ onSnapshot(colRef(), snap => {
 
 async function saveProgram(p) {
   setSyncStatus('saving', '儲存中…');
-  try { await setDoc(docRef(p.id), p); setSyncStatus('online', '已同步'); toast('已儲存'); }
-  catch(e) { setSyncStatus('error', '儲存失敗'); toast('儲存失敗'); }
+  try {
+    await setDoc(docRef(p.id), p);
+    setSyncStatus('online', '已同步');
+    toast('已儲存');
+  } catch(e) {
+    setSyncStatus('error', '儲存失敗');
+    const msg = e.code === 'invalid-argument'
+      ? '圖片太大，請減少圖片數量或改用較小的圖片'
+      : '儲存失敗：' + (e.message || e.code);
+    toast(msg);
+    console.error('saveProgram error:', e);
+  }
 }
 async function removeProgram(id) {
   try { await deleteDoc(docRef(id)); } catch(e) { setSyncStatus('error', '刪除失敗'); }
@@ -512,58 +525,118 @@ function renderCamera(p) {
     <button class="cam-add-btn" onclick="addCam(${p.id})">＋ 新增攝影機</button></div>`;
 }
 
-// ── IMAGE HANDLERS ──
-function handleImg(id, field, input) {
-  const file = input.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = e => { const p = getP(id); p[field] = e.target.result; renderMain(); saveProgram(p); };
-  r.readAsDataURL(file);
-}
-function addSceneImgs(id, input) {
-  const p = getP(id);
-  if (!p.sceneImgs) p.sceneImgs = [];
-  const files = Array.from(input.files);
-  let done = 0;
-  files.forEach(file => {
+// ── IMAGE COMPRESS ──
+function compressImg(file, maxW, quality) {
+  return new Promise(resolve => {
     const r = new FileReader();
     r.onload = e => {
-      p.sceneImgs.push({src: e.target.result, label: file.name.replace(/\.[^.]+$/, '')});
-      done++;
-      if (done === files.length) { renderMain(); saveProgram(p); }
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
     };
     r.readAsDataURL(file);
   });
 }
+
+// ── STORAGE UPLOAD ──
+// 上傳 base64 到 Firebase Storage，回傳公開 URL
+async function uploadToStorage(base64, path) {
+  const ref = storageRef(storage, path);
+  await uploadString(ref, base64, 'data_url');
+  return await getDownloadURL(ref);
+}
+
+// ── IMAGE HANDLERS ──
+async function handleImg(id, field, input) {
+  const file = input.files[0]; if (!file) return;
+  setSyncStatus('saving', '上傳圖片中…');
+  try {
+    const base64 = await compressImg(file, 1400, 0.85);
+    const path = `programs/${id}/${field}_${Date.now()}.jpg`;
+    const url = await uploadToStorage(base64, path);
+    const p = getP(id); p[field] = url;
+    renderMain(); saveProgram(p);
+  } catch(e) {
+    setSyncStatus('error', '圖片上傳失敗');
+    toast('圖片上傳失敗：' + (e.message || e.code));
+  }
+}
+
+async function addSceneImgs(id, input) {
+  const p = getP(id);
+  if (!p.sceneImgs) p.sceneImgs = [];
+  const files = Array.from(input.files);
+  setSyncStatus('saving', `上傳 ${files.length} 張圖片中…`);
+  try {
+    for (let i = 0; i < files.length; i++) {
+      toast(`上傳第 ${i+1}/${files.length} 張…`);
+      const base64 = await compressImg(files[i], 1400, 0.85);
+      const path = `programs/${id}/scene_${Date.now()}_${i}.jpg`;
+      const url = await uploadToStorage(base64, path);
+      p.sceneImgs.push({ src: url, label: files[i].name.replace(/\.[^.]+$/, '') });
+    }
+    renderMain(); saveProgram(p);
+  } catch(e) {
+    setSyncStatus('error', '圖片上傳失敗');
+    toast('上傳失敗：' + (e.message || e.code));
+    renderMain();
+  }
+}
+
 function removeSceneImg(id, idx) {
   const p = getP(id);
   p.sceneImgs.splice(idx, 1);
   renderMain(); saveProgram(p);
 }
-function addOnairImgs(id, input) {
+
+async function addOnairImgs(id, input) {
   const p = getP(id);
   if (!p.onairImgs) p.onairImgs = [];
   const files = Array.from(input.files);
-  let done = 0;
-  files.forEach(file => {
-    const r = new FileReader();
-    r.onload = e => {
-      p.onairImgs.push({src: e.target.result, label: file.name.replace(/\.[^.]+$/, '')});
-      done++;
-      if (done === files.length) { renderMain(); saveProgram(p); }
-    };
-    r.readAsDataURL(file);
-  });
+  setSyncStatus('saving', `上傳 ${files.length} 張圖片中…`);
+  try {
+    for (let i = 0; i < files.length; i++) {
+      toast(`上傳第 ${i+1}/${files.length} 張…`);
+      const base64 = await compressImg(files[i], 1400, 0.85);
+      const path = `programs/${id}/onair_${Date.now()}_${i}.jpg`;
+      const url = await uploadToStorage(base64, path);
+      p.onairImgs.push({ src: url, label: files[i].name.replace(/\.[^.]+$/, '') });
+    }
+    renderMain(); saveProgram(p);
+  } catch(e) {
+    setSyncStatus('error', '圖片上傳失敗');
+    toast('上傳失敗：' + (e.message || e.code));
+    renderMain();
+  }
 }
+
 function removeOnairImg(id, idx) {
   const p = getP(id);
   p.onairImgs.splice(idx, 1);
   renderMain(); saveProgram(p);
 }
-function handleCamImg(id,idx,input){
-  const file=input.files[0];if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{const p=getP(id);p.cameras[idx].img=e.target.result;renderMain();saveProgram(p);};
-  r.readAsDataURL(file);
+
+async function handleCamImg(id, idx, input) {
+  const file = input.files[0]; if (!file) return;
+  setSyncStatus('saving', '上傳圖片中…');
+  try {
+    const base64 = await compressImg(file, 1200, 0.85);
+    const path = `programs/${id}/cam${idx}_${Date.now()}.jpg`;
+    const url = await uploadToStorage(base64, path);
+    const p = getP(id); p.cameras[idx].img = url;
+    renderMain(); saveProgram(p);
+  } catch(e) {
+    setSyncStatus('error', '圖片上傳失敗');
+    toast('圖片上傳失敗：' + (e.message || e.code));
+  }
 }
 
 // ── LIGHTS/CAMS ──
