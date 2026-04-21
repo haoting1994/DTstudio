@@ -237,8 +237,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, getDocs }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getStorage, ref as storageRef, uploadString, getDownloadURL, deleteObject }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const app = initializeApp({
   apiKey: "AIzaSyAA_lBeMcU_MHwBIakycWMY1qVFQpNFlLw",
@@ -249,8 +247,12 @@ const app = initializeApp({
   appId: "1:453498810482:web:265ae1a1aac433355e52eb"
 });
 const db = getFirestore(app);
-const storage = getStorage(app);
 const COL = 'programs';
+
+// ── CLOUDINARY ──
+const CLD_CLOUD  = 'dz7ark1gs';
+const CLD_PRESET = 'DTstudio';
+const CLD_URL    = `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`;
 const colRef = () => collection(db, COL);
 const docRef = id => doc(db, COL, String(id));
 
@@ -546,22 +548,24 @@ function compressImg(file, maxW, quality) {
   });
 }
 
-// ── STORAGE UPLOAD ──
-// 上傳 base64 到 Firebase Storage，回傳公開 URL
-async function uploadToStorage(base64, path) {
-  const ref = storageRef(storage, path);
-  await uploadString(ref, base64, 'data_url');
-  return await getDownloadURL(ref);
+// ── CLOUDINARY UPLOAD ──
+async function uploadToCloud(base64) {
+  const fd = new FormData();
+  fd.append('file', base64);
+  fd.append('upload_preset', CLD_PRESET);
+  fd.append('folder', 'dt-studio');
+  const res = await fetch(CLD_URL, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Cloudinary 上傳失敗 ' + res.status);
+  const data = await res.json();
+  return data.secure_url;
 }
 
-// ── IMAGE HANDLERS ──
 async function handleImg(id, field, input) {
   const file = input.files[0]; if (!file) return;
   setSyncStatus('saving', '上傳圖片中…');
   try {
     const base64 = await compressImg(file, 1400, 0.85);
-    const path = `programs/${id}/${field}_${Date.now()}.jpg`;
-    const url = await uploadToStorage(base64, path);
+    const url = await uploadToCloud(base64);
     const p = getP(id); p[field] = url;
     renderMain(); saveProgram(p);
   } catch(e) {
@@ -579,8 +583,7 @@ async function addSceneImgs(id, input) {
     for (let i = 0; i < files.length; i++) {
       toast(`上傳第 ${i+1}/${files.length} 張…`);
       const base64 = await compressImg(files[i], 1400, 0.85);
-      const path = `programs/${id}/scene_${Date.now()}_${i}.jpg`;
-      const url = await uploadToStorage(base64, path);
+      const url = await uploadToCloud(base64);
       p.sceneImgs.push({ src: url, label: files[i].name.replace(/\.[^.]+$/, '') });
     }
     renderMain(); saveProgram(p);
@@ -606,8 +609,7 @@ async function addOnairImgs(id, input) {
     for (let i = 0; i < files.length; i++) {
       toast(`上傳第 ${i+1}/${files.length} 張…`);
       const base64 = await compressImg(files[i], 1400, 0.85);
-      const path = `programs/${id}/onair_${Date.now()}_${i}.jpg`;
-      const url = await uploadToStorage(base64, path);
+      const url = await uploadToCloud(base64);
       p.onairImgs.push({ src: url, label: files[i].name.replace(/\.[^.]+$/, '') });
     }
     renderMain(); saveProgram(p);
@@ -629,8 +631,7 @@ async function handleCamImg(id, idx, input) {
   setSyncStatus('saving', '上傳圖片中…');
   try {
     const base64 = await compressImg(file, 1200, 0.85);
-    const path = `programs/${id}/cam${idx}_${Date.now()}.jpg`;
-    const url = await uploadToStorage(base64, path);
+    const url = await uploadToCloud(base64);
     const p = getP(id); p.cameras[idx].img = url;
     renderMain(); saveProgram(p);
   } catch(e) {
