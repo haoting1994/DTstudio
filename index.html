@@ -80,8 +80,9 @@
   /* Light tags live on the active slide only */
   .gallery-slide .light-tag { position: absolute; }
   .gallery-add-slide { flex-shrink: 0; width: 140px; min-height: 200px; border-radius: var(--radius); border: 1px dashed rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #666; font-size: 12px; cursor: pointer; transition: all 0.15s; scroll-snap-align: start; background: rgba(255,255,255,0.02); }
-  .gallery-add-slide:hover { border-color: var(--accent); color: var(--accent); }
+  .gallery-add-slide:hover, .gallery-add-slide.drag-over { border-color: var(--accent); color: var(--accent); background: rgba(232,114,12,0.06); }
   .gallery-add-slide span:first-child { font-size: 24px; }
+  .cam-img-zone.drag-over { border-color: var(--accent); background: rgba(232,114,12,0.06); }
   /* Onair slides — same layout but taller */
   .onair-slide { position: relative; flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; cursor: pointer; }
   .onair-slide img { width: 100%; max-height: 460px; object-fit: contain; display: block; background: #2e2e2e; }
@@ -173,6 +174,14 @@
     .section-tabs { padding: 12px 18px 0; }
     .lights-grid { grid-template-columns: 1fr 1fr; }
     .cam-grid { grid-template-columns: 1fr; }
+    /* iPad: 標籤縮小 */
+    .light-tag { padding: 3px 7px; gap: 4px; min-width: 0; }
+    .light-tag .tag-name { display: none; }
+    .light-tag .tag-dot { width: 5px; height: 5px; }
+    .light-tag .tag-val { font-size: 10px; padding: 1px 2px; }
+    .light-tag .tag-sep { font-size: 9px; }
+    /* iPad: 圖片放高 */
+    .gallery-slide img { max-height: 520px; }
   }
   @media (max-width: 600px) {
     .app { flex-direction: column; height: 100dvh; }
@@ -189,10 +198,18 @@
     .lf input, .cam-field input { font-size: 16px; padding: 9px 10px; }
     .light-card-name, .cam-name { font-size: 15px; }
     .note-area { font-size: 16px; }
-    .overlay-zone { min-height: 180px; }  /* legacy - unused */
+    .overlay-zone { min-height: 180px; }
     .onair-zone { min-height: 200px; }
     .img-change-btn { display: block !important; }
     .toast { bottom: 120px; }
+    /* 手機: 圖片放高，標籤只顯示數值 */
+    .gallery-slide { width: 90%; }
+    .gallery-slide img { max-height: 300px; object-fit: cover; object-position: center; }
+    .light-tag { padding: 3px 6px; gap: 3px; min-width: 0; }
+    .light-tag .tag-name { display: none; }
+    .light-tag .tag-dot { width: 5px; height: 5px; }
+    .light-tag .tag-val { font-size: 10px; padding: 1px 2px; }
+    .light-tag .tag-sep { font-size: 9px; }
   }
 </style>
 </head>
@@ -408,6 +425,8 @@ function renderMain() {
       <div class="stab ${activeTab==='onair'?'active':''}" onclick="setActiveTab('onair');renderMain()">上線畫面</div>
     </div>
     ${activeTab==='scene'?renderScene(p):activeTab==='camera'?renderCamera(p):renderOnair(p)}`;
+  // 等 DOM 更新後夾回超出邊界的標籤
+  if (activeTab === 'scene') requestAnimationFrame(() => clampTags(p.id));
 }
 
 function renderScene(p) {
@@ -461,8 +480,12 @@ function renderScene(p) {
     <div class="sec-label">場景圖片 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動・第一張可拖移燈光標籤 →</span></div>
     <div class="gallery-slider" id="sceneSlider${p.id}">
       ${slides}
-      <div class="gallery-add-slide" onclick="document.getElementById('sceneFileAdd${p.id}').click()">
-        <span>＋</span><span>新增圖片</span>
+      <div class="gallery-add-slide" id="sceneDropZone${p.id}"
+        onclick="document.getElementById('sceneFileAdd${p.id}').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="this.classList.remove('drag-over');dropFiles(event,'scene',${p.id})">
+        <span>＋</span><span>拖放或點擊</span><span style="font-size:10px;color:#555">新增圖片</span>
       </div>
     </div>
     <input type="file" accept="image/*" multiple id="sceneFileAdd${p.id}" style="display:none"
@@ -493,8 +516,12 @@ function renderOnair(p) {
     <div class="sec-label">上線畫面 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動瀏覽 →</span></div>
     <div class="gallery-slider" id="onairSlider${p.id}">
       ${slides}
-      <div class="gallery-add-slide" onclick="document.getElementById('onairFileAdd${p.id}').click()">
-        <span>🎬</span><span>新增畫面</span>
+      <div class="gallery-add-slide" id="onairDropZone${p.id}"
+        onclick="document.getElementById('onairFileAdd${p.id}').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="this.classList.remove('drag-over');dropFiles(event,'onair',${p.id})">
+        <span>🎬</span><span>拖放或點擊</span><span style="font-size:10px;color:#555">新增畫面</span>
       </div>
     </div>
     <input type="file" accept="image/*" multiple id="onairFileAdd${p.id}" style="display:none"
@@ -517,8 +544,12 @@ function renderCamera(p) {
         <div class="cam-field"><label>色溫</label><input value="${esc(c.kelvin)}" placeholder="4200k" oninput="getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"></div>
         <div class="cam-field full"><label>備註</label><input value="${esc(c.note||'')}" placeholder="用途說明" oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>
-      <div class="cam-img-zone" onclick="document.getElementById('camFile${p.id}_${i}').click()">
-        ${c.img?`<img src="${c.img}">`:`<div class="cam-img-hint">＋ 上傳畫面截圖</div>`}
+      <div class="cam-img-zone"
+        onclick="document.getElementById('camFile${p.id}_${i}').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="this.classList.remove('drag-over');dropCamFile(event,${p.id},${i})">
+        ${c.img?`<img src="${c.img}">`:`<div class="cam-img-hint">拖放或點擊上傳</div>`}
       </div>
       <input type="file" accept="image/*" id="camFile${p.id}_${i}" style="display:none" onchange="handleCamImg(${p.id},${i},this)">
     </div>`).join('');
@@ -626,6 +657,23 @@ function removeOnairImg(id, idx) {
   renderMain(); saveProgram(p);
 }
 
+// ── DROP HANDLERS ──
+function dropFiles(event, type, id) {
+  event.preventDefault();
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (!files.length) return;
+  // create a fake input-like object
+  const fakeInput = { files };
+  if (type === 'scene') addSceneImgs(id, fakeInput);
+  else addOnairImgs(id, fakeInput);
+}
+function dropCamFile(event, id, idx) {
+  event.preventDefault();
+  const file = Array.from(event.dataTransfer.files).find(f => f.type.startsWith('image/'));
+  if (!file) return;
+  handleCamImg(id, idx, { files: [file] });
+}
+
 async function handleCamImg(id, idx, input) {
   const file = input.files[0]; if (!file) return;
   setSyncStatus('saving', '上傳圖片中…');
@@ -668,6 +716,32 @@ function moveDraggingTag(cx,cy){
   const p=getP(dragging.pid);if(!p.sceneTagPos)p.sceneTagPos={};
   p.sceneTagPos[dragging.idx]={left:left+'px',top:top+'px'};
 }
+
+// 標籤超出圖片邊界時自動夾回（螢幕縮小或換裝置時）
+function clampTags(pid) {
+  const zone = document.getElementById(`sceneZone${pid}_0`);
+  if (!zone) return;
+  const p = getP(pid); if (!p || !p.sceneTagPos) return;
+  const zw = zone.offsetWidth, zh = zone.offsetHeight;
+  if (!zw || !zh) return;
+  let changed = false;
+  Object.keys(p.sceneTagPos).forEach(i => {
+    const tag = document.getElementById(`ltag-${i}`);
+    if (!tag) return;
+    const tw = tag.offsetWidth, th = tag.offsetHeight;
+    const origLeft = parseFloat(p.sceneTagPos[i].left);
+    const origTop  = parseFloat(p.sceneTagPos[i].top);
+    const newLeft  = Math.max(0, Math.min(origLeft, zw - tw - 2));
+    const newTop   = Math.max(0, Math.min(origTop,  zh - th - 2));
+    if (newLeft !== origLeft || newTop !== origTop) {
+      tag.style.left = newLeft + 'px';
+      tag.style.top  = newTop  + 'px';
+      p.sceneTagPos[i] = { left: newLeft+'px', top: newTop+'px' };
+      changed = true;
+    }
+  });
+  if (changed) debouncedSave(p);
+}
 document.addEventListener('mousemove',e=>{if(dragging)moveDraggingTag(e.clientX,e.clientY);});
 document.addEventListener('mouseup',()=>{if(dragging){saveProgram(getP(dragging.pid));dragging=null;}});
 document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDraggingTag(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
@@ -705,6 +779,8 @@ window.addSceneImgs    = addSceneImgs;
 window.removeSceneImg  = removeSceneImg;
 window.addOnairImgs    = addOnairImgs;
 window.removeOnairImg  = removeOnairImg;
+window.dropFiles       = dropFiles;
+window.dropCamFile     = dropCamFile;
 window.handleCamImg    = handleCamImg;
 window.updateTag      = updateTag;
 window.debouncedSave  = debouncedSave;
@@ -730,6 +806,11 @@ window.setActiveTab   = v => { activeTab = v; };
 window.setActiveId    = v => { activeId  = v; };
 window.getActiveTab   = ()  => activeTab;
 window.getActiveId    = ()  => activeId;
+
+// 視窗縮放時重新夾回標籤
+window.addEventListener('resize', () => {
+  if (activeId && activeTab === 'scene') requestAnimationFrame(() => clampTags(activeId));
+});
 </script>
 </body>
 </html>
