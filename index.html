@@ -93,18 +93,54 @@
     .gallery-slide, .onair-slide { width: 88%; }
   }
 
-  .light-tag { position: absolute; background: rgba(0,0,0,0.82); border: 1px solid var(--accent); border-radius: 20px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; cursor: move; user-select: none; backdrop-filter: blur(4px); min-width: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-  .light-tag .tag-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-  .light-tag .tag-name { font-size: 10px; color: #aaa; white-space: nowrap; }
-  .light-tag .tag-values { display: flex; gap: 5px; align-items: center; }
-  .light-tag .tag-val { font-size: 11px; font-weight: 600; color: var(--accent); cursor: pointer; padding: 1px 4px; border-radius: 3px; }
-  .light-tag .tag-val:hover { background: rgba(232,114,12,0.2); }
-  .light-tag .tag-val[contenteditable=true] { outline: 1px solid var(--accent); background: rgba(232,114,12,0.12); min-width: 30px; }
-  .light-tag .tag-sep { color: #555; font-size: 10px; }
+  /* ── LIGHT TAGS ── */
+  /* 顏色 token：橘(主燈) 黃(輔燈) 藍(RGB) 白(勾邊) */
+  .light-tag { position: absolute; border-radius: 20px; padding: 4px 9px; display: flex; align-items: center; gap: 5px; cursor: move; user-select: none; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: box-shadow 0.15s; }
+  .light-tag:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.6); }
+  /* 橘 — 主燈 */
+  .light-tag.c-orange { background: rgba(30,14,0,0.82); border: 1.5px solid #e8720c; }
+  .light-tag.c-orange .tag-dot { background: #e8720c; }
+  .light-tag.c-orange .tag-val { color: #e8720c; }
+  .light-tag.c-orange .tag-val[contenteditable=true] { outline: 1px solid #e8720c; background: rgba(232,114,12,0.15); }
+  /* 黃 — 輔燈 */
+  .light-tag.c-yellow { background: rgba(26,22,0,0.82); border: 1.5px solid #e8c40c; }
+  .light-tag.c-yellow .tag-dot { background: #e8c40c; }
+  .light-tag.c-yellow .tag-val { color: #e8c40c; }
+  .light-tag.c-yellow .tag-val[contenteditable=true] { outline: 1px solid #e8c40c; background: rgba(232,196,12,0.15); }
+  /* 藍 — RGB */
+  .light-tag.c-blue { background: rgba(0,10,30,0.82); border: 1.5px solid #4a9fe8; }
+  .light-tag.c-blue .tag-dot { background: #4a9fe8; }
+  .light-tag.c-blue .tag-val { color: #4a9fe8; }
+  .light-tag.c-blue .tag-val[contenteditable=true] { outline: 1px solid #4a9fe8; background: rgba(74,159,232,0.15); }
+  /* 白 — 勾邊 */
+  .light-tag.c-white { background: rgba(20,20,20,0.82); border: 1.5px solid #d0d0d0; }
+  .light-tag.c-white .tag-dot { background: #d0d0d0; }
+  .light-tag.c-white .tag-val { color: #d0d0d0; }
+  .light-tag.c-white .tag-val[contenteditable=true] { outline: 1px solid #d0d0d0; background: rgba(208,208,208,0.12); }
+
+  .light-tag .tag-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .light-tag .tag-values { display: flex; gap: 4px; align-items: center; }
+  .light-tag .tag-val { font-size: 11px; font-weight: 700; cursor: pointer; padding: 1px 3px; border-radius: 3px; white-space: nowrap; }
+  .light-tag .tag-val:hover { opacity: 0.8; }
+  .light-tag .tag-val[contenteditable=true] { min-width: 28px; }
+  .light-tag .tag-sep { color: rgba(255,255,255,0.3); font-size: 9px; }
+  /* 顏色切換按鈕 */
+  .tag-color-btn { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; flex-shrink: 0; background: rgba(255,255,255,0.15); font-size: 0; }
+  .tag-color-btn:hover { border-color: #fff; }
 
   .lights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 16px; }
   .light-card { background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 12px 14px; min-width: 0; }
   .light-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 6px; }
+  .lc-name-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  /* 色點選色器 */
+  .color-swatches { display: flex; gap: 4px; flex-shrink: 0; }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, transform 0.15s; }
+  .swatch:hover { transform: scale(1.2); }
+  .swatch.active { border-color: #fff; }
+  .swatch.s-orange { background: #e8720c; }
+  .swatch.s-yellow { background: #e8c40c; }
+  .swatch.s-blue   { background: #4a9fe8; }
+  .swatch.s-white  { background: #d0d0d0; }
   .light-card-name { font-size: 12px; font-weight: 600; background: none; border: none; outline: none; color: #eee; font-family: inherit; width: 100%; min-width: 0; }
   .light-card-name:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
   .light-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -174,13 +210,6 @@
     .section-tabs { padding: 12px 18px 0; }
     .lights-grid { grid-template-columns: 1fr 1fr; }
     .cam-grid { grid-template-columns: 1fr; }
-    /* iPad: 標籤縮小 */
-    .light-tag { padding: 3px 7px; gap: 4px; min-width: 0; }
-    .light-tag .tag-name { display: none; }
-    .light-tag .tag-dot { width: 5px; height: 5px; }
-    .light-tag .tag-val { font-size: 10px; padding: 1px 2px; }
-    .light-tag .tag-sep { font-size: 9px; }
-    /* iPad: 圖片放高 */
     .gallery-slide img { max-height: 520px; }
   }
   @media (max-width: 600px) {
@@ -202,14 +231,9 @@
     .onair-zone { min-height: 200px; }
     .img-change-btn { display: block !important; }
     .toast { bottom: 120px; }
-    /* 手機: 圖片放高，標籤只顯示數值 */
     .gallery-slide { width: 90%; }
     .gallery-slide img { max-height: 300px; object-fit: cover; object-position: center; }
-    .light-tag { padding: 3px 6px; gap: 3px; min-width: 0; }
-    .light-tag .tag-name { display: none; }
-    .light-tag .tag-dot { width: 5px; height: 5px; }
-    .light-tag .tag-val { font-size: 10px; padding: 1px 2px; }
-    .light-tag .tag-sep { font-size: 9px; }
+    .light-tag .tag-val { font-size: 10px; }
   }
 </style>
 </head>
@@ -432,11 +456,43 @@ function renderMain() {
 function renderScene(p) {
   if (!p.sceneImgs) p.sceneImgs = p.sceneImg ? [{src:p.sceneImg,label:'佈光圖'}] : [];
 
+  // 顏色 → CSS class
+  const colorClass = c => ({'orange':'c-orange','yellow':'c-yellow','blue':'c-blue','white':'c-white'}[c]||'c-orange');
+
   const tags = p.lights.map((l,i)=>{
-    const pos=(p.sceneTagPos||{})[i]||{left:(10+i*120)+'px',top:(10+(i%3)*44)+'px'};
-    return `<div class="light-tag" id="ltag-${i}" style="left:${pos.left};top:${pos.top}"
+    // 位置：優先用百分比，舊的 px 值轉換
+    let pos = (p.sceneTagPos||{})[i];
+    let posStyle;
+    if (pos && typeof pos.leftPct === 'number') {
+      posStyle = `left:${pos.leftPct}%;top:${pos.topPct}%`;
+    } else if (pos) {
+      posStyle = `left:${pos.left};top:${pos.top}`;
+    } else {
+      posStyle = `left:${Math.min(5 + i*14, 70)}%;top:${10 + (i%4)*18}%`;
+    }
+    const isRGB = l.isRGB || false;
+    const cls = colorClass(l.color||'orange');
+    if (isRGB) {
+      return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
+        onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
+        <span class="tag-dot"></span>
+        <span class="tag-values">
+          <span class="tag-val" contenteditable="true"
+            onblur="getP(${p.id}).lights[${i}].intensity=this.innerText.trim();debouncedSave(getP(${p.id}))"
+            onclick="event.stopPropagation()">${esc(l.intensity||'H—')}</span>
+          <span class="tag-sep">/</span>
+          <span class="tag-val" contenteditable="true"
+            onblur="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim();debouncedSave(getP(${p.id}))"
+            onclick="event.stopPropagation()">${esc(l.kelvin||'S—')}</span>
+          <span class="tag-sep">/</span>
+          <span class="tag-val" contenteditable="true"
+            onblur="getP(${p.id}).lights[${i}].intensity2=this.innerText.trim();debouncedSave(getP(${p.id}))"
+            onclick="event.stopPropagation()">${esc(l.intensity2||'i—')}</span>
+        </span></div>`;
+    }
+    return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
       onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
-      <span class="tag-dot"></span><span class="tag-name">${esc(l.name)}</span>
+      <span class="tag-dot"></span>
       <span class="tag-values">
         <span class="tag-val" contenteditable="true"
           onblur="getP(${p.id}).lights[${i}].intensity=this.innerText.trim();debouncedSave(getP(${p.id}))"
@@ -445,27 +501,47 @@ function renderScene(p) {
         <span class="tag-val" contenteditable="true"
           onblur="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim();debouncedSave(getP(${p.id}))"
           onclick="event.stopPropagation()">${esc(l.kelvin||'—')}</span>
-      </span></div>`;}).join('');
+      </span></div>`;
+  }).join('');
 
-  const slides = p.sceneImgs.map((img,i)=>`
-    <div class="gallery-slide" id="sceneZone${p.id}_${i}">
+  const slides = p.sceneImgs.map((img,si)=>`
+    <div class="gallery-slide" id="sceneZone${p.id}_${si}">
       <img src="${img.src}" draggable="false">
-      ${i===0 ? tags : ''}
+      ${si===0 ? tags : ''}
       <div class="slide-label">
         <input value="${esc(img.label||'')}" placeholder="圖片說明（佈光圖、場佈圖…）"
-          oninput="getP(${p.id}).sceneImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
+          oninput="getP(${p.id}).sceneImgs[${si}].label=this.value;debouncedSave(getP(${p.id}))"
           onclick="event.stopPropagation()">
-        <button class="slide-del" onclick="removeSceneImg(${p.id},${i})">✕</button>
+        <button class="slide-del" onclick="removeSceneImg(${p.id},${si})">✕</button>
       </div>
     </div>`).join('');
 
-  const lightCards = p.lights.map((l,i)=>`
-    <div class="light-card">
+  const COLORS = ['orange','yellow','blue','white'];
+  const lightCards = p.lights.map((l,i)=>{
+    const isRGB = l.isRGB||false;
+    const cur = l.color||'orange';
+    const swatches = COLORS.map(c=>`<span class="swatch s-${c}${cur===c?' active':''}"
+      onclick="setLightColor(${p.id},${i},'${c}')" title="${{orange:'橘(主燈)',yellow:'黃(輔燈)',blue:'藍(RGB)',white:'白(勾邊)'}[c]}"></span>`).join('');
+    return `<div class="light-card">
       <div class="light-card-top">
-        <input class="light-card-name" value="${esc(l.name)}" placeholder="燈具名稱"
-          oninput="getP(${p.id}).lights[${i}].name=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))">
+        <div class="lc-name-row">
+          <input class="light-card-name" value="${esc(l.name)}" placeholder="燈具名稱"
+            oninput="getP(${p.id}).lights[${i}].name=this.value;debouncedSave(getP(${p.id}))">
+          <div class="color-swatches">${swatches}</div>
+        </div>
         <button class="rm-btn" onclick="removeLight(${p.id},${i})">✕</button>
       </div>
+      ${isRGB ? `
+      <div class="light-fields">
+        <div class="lf"><label>H 色相</label><input value="${esc(l.intensity)}" placeholder="H258"
+          oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>S 飽和</label><input value="${esc(l.kelvin)}" placeholder="S44"
+          oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>I 亮度</label><input value="${esc(l.intensity2||'')}" placeholder="i62%"
+          oninput="getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
+          oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
+      </div>` : `
       <div class="light-fields">
         <div class="lf"><label>強度</label><input value="${esc(l.intensity)}" placeholder="75%"
           oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
@@ -473,8 +549,15 @@ function renderScene(p) {
           oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
         <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
           oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
+      </div>`}
+      <div style="margin-top:8px">
+        <label style="font-size:10px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" ${isRGB?'checked':''} onchange="setLightRGB(${p.id},${i},this.checked)">
+          <span>RGB 模式（三欄 H/S/I）</span>
+        </label>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   return `<div class="panel active">
     <div class="sec-label">場景圖片 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動・第一張可拖移燈光標籤 →</span></div>
@@ -689,10 +772,22 @@ async function handleCamImg(id, idx, input) {
 }
 
 // ── LIGHTS/CAMS ──
-function addLight(id){const p=getP(id);p.lights.push({name:`燈${p.lights.length+1}`,intensity:'',kelvin:'',note:''});renderMain();saveProgram(p);}
+function addLight(id){const p=getP(id);p.lights.push({name:`燈${p.lights.length+1}`,intensity:'',kelvin:'',note:'',color:'orange',isRGB:false});renderMain();saveProgram(p);}
 function removeLight(id,idx){const p=getP(id);p.lights.splice(idx,1);if(!p.sceneTagPos)p.sceneTagPos={};delete p.sceneTagPos[idx];renderMain();saveProgram(p);}
 function addCam(id){const p=getP(id);p.cameras.push({name:`C${p.cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});renderMain();saveProgram(p);}
 function removeCam(id,idx){const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);}
+
+function setLightColor(id, idx, color) {
+  const p = getP(id); p.lights[idx].color = color;
+  const tag = document.getElementById(`ltag-${idx}`);
+  if (tag) { tag.className = tag.className.replace(/c-\w+/, `c-${color}`); }
+  debouncedSave(p); renderMain();
+}
+function setLightRGB(id, idx, isRGB) {
+  const p = getP(id); p.lights[idx].isRGB = isRGB;
+  if (isRGB && !p.lights[idx].color) p.lights[idx].color = 'blue';
+  renderMain(); debouncedSave(p);
+}
 
 // ── TAG SYNC ──
 function updateTag(pid,idx){
@@ -701,7 +796,7 @@ function updateTag(pid,idx){
   const vals=el.querySelectorAll('.tag-val');
   if(vals[0]&&document.activeElement!==vals[0])vals[0].innerText=l.intensity||'—';
   if(vals[1]&&document.activeElement!==vals[1])vals[1].innerText=l.kelvin||'—';
-  el.querySelector('.tag-name').textContent=l.name;
+  if(vals[2]&&document.activeElement!==vals[2])vals[2].innerText=l.intensity2||'—';
 }
 
 // ── DRAG TAGS ──
@@ -710,37 +805,46 @@ function startTouchDrag(e,pid,idx){if(e.target.getAttribute('contenteditable')==
 function moveDraggingTag(cx,cy){
   const zone=document.getElementById(`sceneZone${dragging.pid}_0`);if(!zone)return;
   const zr=zone.getBoundingClientRect(),tag=document.getElementById(`ltag-${dragging.idx}`);
-  const left=Math.max(0,Math.min(cx-zr.left-dragOffX,zr.width-tag.offsetWidth));
-  const top =Math.max(0,Math.min(cy-zr.top -dragOffY,zr.height-tag.offsetHeight));
-  tag.style.left=left+'px';tag.style.top=top+'px';
+  const leftPx=Math.max(0,Math.min(cx-zr.left-dragOffX, zr.width -tag.offsetWidth));
+  const topPx =Math.max(0,Math.min(cy-zr.top -dragOffY, zr.height-tag.offsetHeight));
+  const leftPct=parseFloat((leftPx/zr.width *100).toFixed(3));
+  const topPct =parseFloat((topPx /zr.height*100).toFixed(3));
+  tag.style.left=leftPct+'%'; tag.style.top=topPct+'%';
   const p=getP(dragging.pid);if(!p.sceneTagPos)p.sceneTagPos={};
-  p.sceneTagPos[dragging.idx]={left:left+'px',top:top+'px'};
+  p.sceneTagPos[dragging.idx]={leftPct,topPct};
 }
 
-// 標籤超出圖片邊界時自動夾回（螢幕縮小或換裝置時）
+// 標籤超出邊界時自動夾回（支援百分比與舊的 px 格式）
 function clampTags(pid) {
-  const zone = document.getElementById(`sceneZone${pid}_0`);
-  if (!zone) return;
-  const p = getP(pid); if (!p || !p.sceneTagPos) return;
-  const zw = zone.offsetWidth, zh = zone.offsetHeight;
-  if (!zw || !zh) return;
-  let changed = false;
-  Object.keys(p.sceneTagPos).forEach(i => {
-    const tag = document.getElementById(`ltag-${i}`);
-    if (!tag) return;
-    const tw = tag.offsetWidth, th = tag.offsetHeight;
-    const origLeft = parseFloat(p.sceneTagPos[i].left);
-    const origTop  = parseFloat(p.sceneTagPos[i].top);
-    const newLeft  = Math.max(0, Math.min(origLeft, zw - tw - 2));
-    const newTop   = Math.max(0, Math.min(origTop,  zh - th - 2));
-    if (newLeft !== origLeft || newTop !== origTop) {
-      tag.style.left = newLeft + 'px';
-      tag.style.top  = newTop  + 'px';
-      p.sceneTagPos[i] = { left: newLeft+'px', top: newTop+'px' };
-      changed = true;
+  const zone=document.getElementById(`sceneZone${pid}_0`);if(!zone)return;
+  const p=getP(pid);if(!p||!p.sceneTagPos)return;
+  const zw=zone.offsetWidth,zh=zone.offsetHeight;if(!zw||!zh)return;
+  let changed=false;
+  Object.keys(p.sceneTagPos).forEach(i=>{
+    const tag=document.getElementById(`ltag-${i}`);if(!tag)return;
+    const tw=tag.offsetWidth,th=tag.offsetHeight;
+    const pos=p.sceneTagPos[i];
+    // 舊格式（px）升級到百分比
+    if(typeof pos.leftPct!=='number'){
+      const lp=parseFloat(pos.left||'0')/zw*100;
+      const tp=parseFloat(pos.top||'0')/zh*100;
+      pos.leftPct=parseFloat(Math.min(lp,(zw-tw)/zw*100).toFixed(3));
+      pos.topPct =parseFloat(Math.min(tp,(zh-th)/zh*100).toFixed(3));
+      delete pos.left; delete pos.top;
+      tag.style.left=pos.leftPct+'%'; tag.style.top=pos.topPct+'%';
+      changed=true; return;
+    }
+    const maxLpct=(zw-tw)/zw*100;
+    const maxTpct=(zh-th)/zh*100;
+    const nl=Math.max(0,Math.min(pos.leftPct,maxLpct));
+    const nt=Math.max(0,Math.min(pos.topPct, maxTpct));
+    if(nl!==pos.leftPct||nt!==pos.topPct){
+      pos.leftPct=parseFloat(nl.toFixed(3)); pos.topPct=parseFloat(nt.toFixed(3));
+      tag.style.left=pos.leftPct+'%'; tag.style.top=pos.topPct+'%';
+      changed=true;
     }
   });
-  if (changed) debouncedSave(p);
+  if(changed)debouncedSave(p);
 }
 document.addEventListener('mousemove',e=>{if(dragging)moveDraggingTag(e.clientX,e.clientY);});
 document.addEventListener('mouseup',()=>{if(dragging){saveProgram(getP(dragging.pid));dragging=null;}});
@@ -774,6 +878,8 @@ window.addLight       = addLight;
 window.removeLight    = removeLight;
 window.addCam         = addCam;
 window.removeCam      = removeCam;
+window.setLightColor  = setLightColor;
+window.setLightRGB    = setLightRGB;
 window.handleImg      = handleImg;
 window.addSceneImgs    = addSceneImgs;
 window.removeSceneImg  = removeSceneImg;
