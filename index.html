@@ -536,20 +536,25 @@ function renderScene(p) {
       </div>
       ${isRGB ? `
       <div class="light-fields">
-        <div class="lf"><label>H 色相</label><input value="${esc(l.intensity)}" placeholder="H258"
-          oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
-        <div class="lf"><label>S 飽和</label><input value="${esc(l.kelvin)}" placeholder="S44"
-          oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
-        <div class="lf"><label>I 亮度</label><input value="${esc(l.intensity2||'')}" placeholder="i62%"
-          oninput="getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>H 色相</label><input value="${esc(l.intensity)}" placeholder="258"
+          oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
+          onblur="this.value=fmtH(this.value);getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>S 飽和</label><input value="${esc(l.kelvin)}" placeholder="58"
+          oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
+          onblur="this.value=fmtS(this.value);getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>I 亮度</label><input value="${esc(l.intensity2||'')}" placeholder="62"
+          oninput="getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
+          onblur="this.value=fmtI(this.value);getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
         <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
           oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>` : `
       <div class="light-fields">
-        <div class="lf"><label>強度</label><input value="${esc(l.intensity)}" placeholder="75%"
-          oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
-        <div class="lf"><label>色溫</label><input value="${esc(l.kelvin)}" placeholder="4200K"
-          oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>強度</label><input value="${esc(l.intensity)}" placeholder="80"
+          oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
+          onblur="this.value=fmtPct(this.value);getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
+        <div class="lf"><label>色溫</label><input value="${esc(l.kelvin)}" placeholder="4200"
+          oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
+          onblur="this.value=fmtK(this.value);getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
         <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
           oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>`}
@@ -774,6 +779,32 @@ async function handleCamImg(id, idx, input) {
   }
 }
 
+// ── LIGHT VALUE FORMATTERS ──
+// 輸入純數字自動補單位，已有單位則保留原樣
+function fmtPct(v) {
+  v = v.trim(); if (!v) return v;
+  return /^\d+(\.\d+)?$/.test(v) ? v + '%' : v;
+}
+function fmtK(v) {
+  v = v.trim(); if (!v) return v;
+  return /^\d+(\.\d+)?$/.test(v) ? v + 'K' : v;
+}
+function fmtH(v) {
+  v = v.trim(); if (!v) return v;
+  return /^\d+(\.\d+)?$/.test(v) ? 'H' + v : v;
+}
+function fmtS(v) {
+  v = v.trim(); if (!v) return v;
+  return /^\d+(\.\d+)?$/.test(v) ? 'S' + v : v;
+}
+function fmtI(v) {
+  v = v.trim(); if (!v) return v;
+  // 純數字 → I62%；已有 I 前綴 → 補 %；已完整 → 原樣
+  if (/^\d+(\.\d+)?$/.test(v)) return 'I' + v + '%';
+  if (/^[Ii]\d+(\.\d+)?$/.test(v)) return v.toUpperCase() + '%';
+  return v;
+}
+
 // ── LIGHTS/CAMS ──
 function addLight(id) {
   const p = getP(id);
@@ -906,6 +937,8 @@ window.addCam         = addCam;
 window.removeCam      = removeCam;
 window.setLightColor  = setLightColor;
 window.setLightRGB    = setLightRGB;
+window.fmtPct = fmtPct; window.fmtK = fmtK;
+window.fmtH = fmtH; window.fmtS = fmtS; window.fmtI = fmtI;
 window.handleImg      = handleImg;
 window.addSceneImgs    = addSceneImgs;
 window.removeSceneImg  = removeSceneImg;
