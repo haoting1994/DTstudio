@@ -465,10 +465,13 @@ function renderScene(p) {
     let posStyle;
     if (pos && typeof pos.leftPct === 'number') {
       posStyle = `left:${pos.leftPct}%;top:${pos.topPct}%`;
-    } else if (pos) {
+    } else if (pos && pos.left) {
       posStyle = `left:${pos.left};top:${pos.top}`;
     } else {
-      posStyle = `left:${Math.min(5 + i*14, 70)}%;top:${10 + (i%4)*18}%`;
+      // 預設：交錯排列，確保不超出邊界
+      const defaultLeft = Math.min(5 + (i % 4) * 22, 72);
+      const defaultTop  = 5 + Math.floor(i / 4) * 22;
+      posStyle = `left:${defaultLeft}%;top:${defaultTop}%`;
     }
     const isRGB = l.isRGB || false;
     const cls = colorClass(l.color||'orange');
@@ -772,8 +775,31 @@ async function handleCamImg(id, idx, input) {
 }
 
 // ── LIGHTS/CAMS ──
-function addLight(id){const p=getP(id);p.lights.push({name:`燈${p.lights.length+1}`,intensity:'',kelvin:'',note:'',color:'orange',isRGB:false});renderMain();saveProgram(p);}
-function removeLight(id,idx){const p=getP(id);p.lights.splice(idx,1);if(!p.sceneTagPos)p.sceneTagPos={};delete p.sceneTagPos[idx];renderMain();saveProgram(p);}
+function addLight(id) {
+  const p = getP(id);
+  const i = p.lights.length;
+  p.lights.push({name:`燈${i+1}`, intensity:'', kelvin:'', note:'', color:'orange', isRGB:false});
+  // 給新標籤一個預設位置（交錯排列，確保在圖內）
+  if (!p.sceneTagPos) p.sceneTagPos = {};
+  p.sceneTagPos[i] = { leftPct: Math.min(5 + (i % 4) * 22, 72), topPct: 5 + Math.floor(i / 4) * 22 };
+  renderMain(); saveProgram(p);
+}
+
+function removeLight(id, idx) {
+  const p = getP(id);
+  p.lights.splice(idx, 1);
+  // 重新排列 sceneTagPos：刪除該 key，後面的 key 全部往前移一位
+  if (!p.sceneTagPos) p.sceneTagPos = {};
+  const newPos = {};
+  Object.keys(p.sceneTagPos).forEach(k => {
+    const ki = parseInt(k);
+    if (ki < idx) newPos[ki] = p.sceneTagPos[k];
+    else if (ki > idx) newPos[ki - 1] = p.sceneTagPos[k];
+    // ki === idx 就不放進去（刪掉）
+  });
+  p.sceneTagPos = newPos;
+  renderMain(); saveProgram(p);
+}
 function addCam(id){const p=getP(id);p.cameras.push({name:`C${p.cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});renderMain();saveProgram(p);}
 function removeCam(id,idx){const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);}
 
