@@ -94,65 +94,57 @@
   }
 
   /* ── LIGHT TAGS ── */
-  /* 顏色 token：橘(主燈) 黃(輔燈) 藍(RGB) 白(勾邊) */
   .light-tag { position: absolute; border-radius: 20px; padding: 4px 9px; display: flex; align-items: center; gap: 5px; cursor: move; user-select: none; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: box-shadow 0.15s; }
   .light-tag:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.6); }
-  /* 橘 — 主燈 */
-  .light-tag.c-orange { background: rgba(30,14,0,0.82); border: 1.5px solid #e8720c; }
-  .light-tag.c-orange .tag-dot { background: #e8720c; }
-  .light-tag.c-orange .tag-val { color: #e8720c; }
-  .light-tag.c-orange .tag-val[contenteditable=true] { outline: 1px solid #e8720c; background: rgba(232,114,12,0.15); }
-  /* 黃 — 輔燈 */
+  /* A燈 — 黃 */
   .light-tag.c-yellow { background: rgba(26,22,0,0.82); border: 1.5px solid #e8c40c; }
-  .light-tag.c-yellow .tag-dot { background: #e8c40c; }
   .light-tag.c-yellow .tag-val { color: #e8c40c; }
-  .light-tag.c-yellow .tag-val[contenteditable=true] { outline: 1px solid #e8c40c; background: rgba(232,196,12,0.15); }
-  /* 藍 — RGB */
+  /* B燈 — 藍 */
   .light-tag.c-blue { background: rgba(0,10,30,0.82); border: 1.5px solid #4a9fe8; }
-  .light-tag.c-blue .tag-dot { background: #4a9fe8; }
   .light-tag.c-blue .tag-val { color: #4a9fe8; }
-  .light-tag.c-blue .tag-val[contenteditable=true] { outline: 1px solid #4a9fe8; background: rgba(74,159,232,0.15); }
-  /* 白 — 勾邊 */
-  .light-tag.c-white { background: rgba(20,20,20,0.82); border: 1.5px solid #d0d0d0; }
-  .light-tag.c-white .tag-dot { background: #d0d0d0; }
-  .light-tag.c-white .tag-val { color: #d0d0d0; }
-  .light-tag.c-white .tag-val[contenteditable=true] { outline: 1px solid #d0d0d0; background: rgba(208,208,208,0.12); }
-
+  /* C燈 — 綠 */
+  .light-tag.c-green { background: rgba(0,20,8,0.82); border: 1.5px solid #3ecf6a; }
+  .light-tag.c-green .tag-val { color: #3ecf6a; }
   .light-tag .tag-dot { display: none; }
   .light-tag .tag-values { display: flex; gap: 6px; align-items: center; }
   .light-tag .tag-val { font-size: 11px; font-weight: 700; cursor: pointer; padding: 1px 3px; border-radius: 3px; white-space: nowrap; }
   .light-tag .tag-val:hover { opacity: 0.8; }
   .light-tag .tag-val[contenteditable=true] { min-width: 28px; }
   .light-tag .tag-sep { display: none; }
-  /* 顏色切換按鈕 */
-  .tag-color-btn { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; flex-shrink: 0; background: rgba(255,255,255,0.15); font-size: 0; }
-  .tag-color-btn:hover { border-color: #fff; }
 
+  /* ── LIGHT CARDS ── */
   .lights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 16px; }
-  .light-card { background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 12px 14px; min-width: 0; }
+  .light-card { border-radius: var(--radius-sm); padding: 12px 14px; min-width: 0; transition: opacity 0.2s; }
+  .light-card.off { opacity: 0.28; }
+  /* 燈組顏色外框 */
+  .light-card.g-yellow { background: rgba(40,34,0,0.7); border: 1.5px solid #e8c40c44; }
+  .light-card.g-yellow.on { border-color: #e8c40c99; }
+  .light-card.g-blue   { background: rgba(0,16,40,0.7); border: 1.5px solid #4a9fe844; }
+  .light-card.g-blue.on   { border-color: #4a9fe899; }
+  .light-card.g-green  { background: rgba(0,28,12,0.7); border: 1.5px solid #3ecf6a44; }
+  .light-card.g-green.on  { border-color: #3ecf6a99; }
   .light-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 6px; }
   .lc-name-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
-  /* 色點選色器 */
-  .color-swatches { display: flex; gap: 4px; flex-shrink: 0; }
-  .swatch { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s, transform 0.15s; }
-  .swatch:hover { transform: scale(1.2); }
-  .swatch.active { border-color: #fff; }
-  .swatch.s-orange { background: #e8720c; }
-  .swatch.s-yellow { background: #e8c40c; }
-  .swatch.s-blue   { background: #4a9fe8; }
-  .swatch.s-white  { background: #d0d0d0; }
-  .light-card-name { font-size: 12px; font-weight: 600; background: none; border: none; outline: none; color: #eee; font-family: inherit; width: 100%; min-width: 0; }
-  .light-card-name:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
+  /* 電源按鈕 */
+  .power-btn { background: none; border: none; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px; flex-shrink: 0; filter: grayscale(1) brightness(0.4); transition: filter 0.2s; }
+  .power-btn.on { filter: grayscale(0) brightness(1.1); }
+  .light-card.g-yellow .power-btn.on { color: #e8c40c; }
+  .light-card.g-blue   .power-btn.on { color: #4a9fe8; }
+  .light-card.g-green  .power-btn.on { color: #3ecf6a; }
+  /* 燈具選擇 */
+  .fixture-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+  .fixture-btn { font-size: 11px; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #aaa; cursor: pointer; transition: all 0.15s; }
+  .fixture-btn.active { background: rgba(255,255,255,0.15); color: #eee; border-color: rgba(255,255,255,0.4); }
+  .honeycomb-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+  .honeycomb-row label { font-size: 11px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+  .light-card-name { font-size: 13px; font-weight: 700; background: none; border: none; outline: none; color: #eee; font-family: inherit; }
   .light-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .lf { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .lf label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
   .lf input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 5px 7px; color: #eee; font-size: 12px; font-weight: 500; outline: none; font-family: inherit; width: 100%; min-width: 0; }
   .lf input:focus { border-color: var(--accent); }
   .lf.full { grid-column: 1 / -1; }
-  .rm-btn { background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 2px 4px; border-radius: 3px; flex-shrink: 0; }
-  .rm-btn:hover { color: var(--red); }
-  .add-light-btn { margin-top: 12px; padding: 8px; width: 100%; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: none; color: #777; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-  .add-light-btn:hover { border-color: var(--accent); color: var(--accent); }
 
   .cam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
   .cam-card { background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); padding: 16px; min-width: 0; }
@@ -459,8 +451,15 @@ function renderScene(p) {
   // 顏色 → CSS class
   const colorClass = c => ({'orange':'c-orange','yellow':'c-yellow','blue':'c-blue','white':'c-white'}[c]||'c-orange');
 
+  const FIXED_LIGHTS_DEF = [
+    {key:'A1',group:'yellow'},{key:'A2',group:'yellow'},
+    {key:'B1',group:'blue'},{key:'B2',group:'blue'},
+    {key:'C1',group:'green'},{key:'C2',group:'green'},{key:'C3',group:'green'},
+  ];
   const tags = p.lights.map((l,i)=>{
-    // 位置：優先用百分比，舊的 px 值轉換
+    if (l.on === false) return ''; // 關閉的燈不顯示標籤
+    const group = (FIXED_LIGHTS_DEF[i]||{}).group || 'yellow';
+    const cls = `c-${group}`;
     let pos = (p.sceneTagPos||{})[i];
     let posStyle;
     if (pos && typeof pos.leftPct === 'number') {
@@ -468,13 +467,11 @@ function renderScene(p) {
     } else if (pos && pos.left) {
       posStyle = `left:${pos.left};top:${pos.top}`;
     } else {
-      // 預設：交錯排列，確保不超出邊界
       const defaultLeft = Math.min(5 + (i % 4) * 22, 72);
       const defaultTop  = 5 + Math.floor(i / 4) * 22;
       posStyle = `left:${defaultLeft}%;top:${defaultTop}%`;
     }
     const isRGB = l.isRGB || false;
-    const cls = colorClass(l.color||'orange');
     if (isRGB) {
       return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
         onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
@@ -519,50 +516,81 @@ function renderScene(p) {
       </div>
     </div>`).join('');
 
-  const COLORS = ['orange','yellow','blue','white'];
-  const lightCards = p.lights.map((l,i)=>{
-    const isRGB = l.isRGB||false;
-    const cur = l.color||'orange';
-    const swatches = COLORS.map(c=>`<span class="swatch s-${c}${cur===c?' active':''}"
-      onclick="setLightColor(${p.id},${i},'${c}')" title="${{orange:'橘(主燈)',yellow:'黃(輔燈)',blue:'藍(RGB)',white:'白(勾邊)'}[c]}"></span>`).join('');
-    return `<div class="light-card">
+  // 固定燈光定義
+  const FIXED_LIGHTS = [
+    {key:'A1', label:'A1 (360c)', group:'yellow'},
+    {key:'A2', label:'A2 (360c)', group:'yellow'},
+    {key:'B1', label:'B1 (300c)', group:'blue'},
+    {key:'B2', label:'B2 (300c)', group:'blue'},
+    {key:'C1', label:'C1 (200x)', group:'green'},
+    {key:'C2', label:'C2 (200x)', group:'green'},
+    {key:'C3', label:'C3 (200x)', group:'green'},
+  ];
+  // 確保 p.lights 有 7 個並對應 key
+  FIXED_LIGHTS.forEach((def, i) => {
+    if (!p.lights[i]) p.lights[i] = {};
+    const l = p.lights[i];
+    if (!l.key) l.key = def.key;
+    if (l.group === undefined) l.group = def.group;
+    if (l.on === undefined) l.on = true;
+    if (l.fixture === undefined) l.fixture = '';
+    if (l.honeycomb === undefined) l.honeycomb = false;
+    if (l.isRGB === undefined) l.isRGB = false;
+  });
+  // 只保留 7 個
+  p.lights = p.lights.slice(0, 7);
+
+  const FIXTURES = ['圓','方','傘','標','裸'];
+  const lightCards = p.lights.map((l, i) => {
+    const def = FIXED_LIGHTS[i];
+    const isOn = l.on !== false;
+    const isRGB = l.isRGB || false;
+    const group = def.group;
+    const colorClass = `g-${group}`;
+    const tagColor = group === 'yellow' ? 'c-yellow' : group === 'blue' ? 'c-blue' : 'c-green';
+    const showHoneycomb = l.fixture === '圓' || l.fixture === '方';
+
+    const fixtureButtons = FIXTURES.map(f =>
+      `<button class="fixture-btn${l.fixture===f?' active':''}"
+        onclick="setFixture(${p.id},${i},'${f}')">${f}</button>`
+    ).join('');
+
+    return `<div class="light-card ${colorClass}${isOn?' on':' off'}">
       <div class="light-card-top">
         <div class="lc-name-row">
-          <input class="light-card-name" value="${esc(l.name)}" placeholder="燈具名稱"
-            oninput="getP(${p.id}).lights[${i}].name=this.value;debouncedSave(getP(${p.id}))">
-          <div class="color-swatches">${swatches}</div>
+          <button class="power-btn${isOn?' on':''}" onclick="togglePower(${p.id},${i})" title="${isOn?'關閉':'開啟'}燈光">⏻</button>
+          <span class="light-card-name">${esc(def.label)}</span>
         </div>
-        <button class="rm-btn" onclick="removeLight(${p.id},${i})">✕</button>
       </div>
       ${isRGB ? `
       <div class="light-fields">
-        <div class="lf"><label>H 色相</label><input value="${esc(l.intensity)}" placeholder="258"
+        <div class="lf"><label>H 色相</label><input value="${esc(l.intensity||'')}" placeholder="258"
           oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
-          onchange="this.value=fmtH(this.value);getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
           onchange="this.value=fmtH(this.value);getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
-        <div class="lf"><label>S 飽和</label><input value="${esc(l.kelvin)}" placeholder="58"
+        <div class="lf"><label>S 飽和</label><input value="${esc(l.kelvin||'')}" placeholder="58"
           oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
-          onchange="this.value=fmtS(this.value);getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
           onchange="this.value=fmtS(this.value);getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
         <div class="lf"><label>I 亮度</label><input value="${esc(l.intensity2||'')}" placeholder="62"
           oninput="getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
-          onchange="this.value=fmtI(this.value);getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
           onchange="this.value=fmtI(this.value);getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
         <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
           oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>` : `
       <div class="light-fields">
-        <div class="lf"><label>強度</label><input value="${esc(l.intensity)}" placeholder="80"
+        <div class="lf"><label>強度</label><input value="${esc(l.intensity||'')}" placeholder="80"
           oninput="getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
-          onchange="this.value=fmtPct(this.value);getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
           onchange="this.value=fmtPct(this.value);getP(${p.id}).lights[${i}].intensity=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
-        <div class="lf"><label>色溫</label><input value="${esc(l.kelvin)}" placeholder="4200"
+        <div class="lf"><label>色溫</label><input value="${esc(l.kelvin||'')}" placeholder="4200"
           oninput="getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
-          onchange="this.value=fmtK(this.value);getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
           onchange="this.value=fmtK(this.value);getP(${p.id}).lights[${i}].kelvin=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
         <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
           oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>`}
+      <div class="fixture-row">${fixtureButtons}</div>
+      ${showHoneycomb ? `<div class="honeycomb-row">
+        <label><input type="checkbox" ${l.honeycomb?'checked':''}
+          onchange="setHoneycomb(${p.id},${i},this.checked)"> 蜂巢</label>
+      </div>` : ''}
       <div style="margin-top:8px">
         <label style="font-size:10px;color:#666;display:flex;align-items:center;gap:6px;cursor:pointer">
           <input type="checkbox" ${isRGB?'checked':''} onchange="setLightRGB(${p.id},${i},this.checked)">
@@ -589,7 +617,6 @@ function renderScene(p) {
     <div class="panel-gap">
       <div class="sec-label">燈光設定</div>
       <div class="lights-grid">${lightCards}</div>
-      <button class="add-light-btn" onclick="addLight(${p.id})">＋ 新增燈光</button>
     </div>
   </div>`;
 }
@@ -810,44 +837,25 @@ function fmtI(v) {
   return v;
 }
 
-// ── LIGHTS/CAMS ──
-function addLight(id) {
+// ── FIXED LIGHTS ──
+function togglePower(id, idx) {
   const p = getP(id);
-  const i = p.lights.length;
-  p.lights.push({name:`燈${i+1}`, intensity:'', kelvin:'', note:'', color:'orange', isRGB:false});
-  // 給新標籤一個預設位置（交錯排列，確保在圖內）
-  if (!p.sceneTagPos) p.sceneTagPos = {};
-  p.sceneTagPos[i] = { leftPct: Math.min(5 + (i % 4) * 22, 72), topPct: 5 + Math.floor(i / 4) * 22 };
-  renderMain(); saveProgram(p);
+  p.lights[idx].on = !(p.lights[idx].on !== false);
+  renderMain(); debouncedSave(p);
 }
-
-function removeLight(id, idx) {
+function setFixture(id, idx, fixture) {
   const p = getP(id);
-  p.lights.splice(idx, 1);
-  // 重新排列 sceneTagPos：刪除該 key，後面的 key 全部往前移一位
-  if (!p.sceneTagPos) p.sceneTagPos = {};
-  const newPos = {};
-  Object.keys(p.sceneTagPos).forEach(k => {
-    const ki = parseInt(k);
-    if (ki < idx) newPos[ki] = p.sceneTagPos[k];
-    else if (ki > idx) newPos[ki - 1] = p.sceneTagPos[k];
-    // ki === idx 就不放進去（刪掉）
-  });
-  p.sceneTagPos = newPos;
-  renderMain(); saveProgram(p);
+  p.lights[idx].fixture = p.lights[idx].fixture === fixture ? '' : fixture;
+  p.lights[idx].honeycomb = false; // 換燈具時重置蜂巢
+  renderMain(); debouncedSave(p);
 }
-function addCam(id){const p=getP(id);p.cameras.push({name:`C${p.cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});renderMain();saveProgram(p);}
-function removeCam(id,idx){const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);}
-
-function setLightColor(id, idx, color) {
-  const p = getP(id); p.lights[idx].color = color;
-  const tag = document.getElementById(`ltag-${idx}`);
-  if (tag) { tag.className = tag.className.replace(/c-\w+/, `c-${color}`); }
-  debouncedSave(p); renderMain();
+function setHoneycomb(id, idx, val) {
+  const p = getP(id);
+  p.lights[idx].honeycomb = val;
+  debouncedSave(p);
 }
 function setLightRGB(id, idx, isRGB) {
   const p = getP(id); p.lights[idx].isRGB = isRGB;
-  if (isRGB && !p.lights[idx].color) p.lights[idx].color = 'blue';
   renderMain(); debouncedSave(p);
 }
 
@@ -936,11 +944,14 @@ function filterNav(){const q=document.getElementById('searchInput').value.toLowe
 // 改用直接函式包裝，確保讀寫的是 module 內部變數
 window.addProgram     = addProgram;
 window.deleteProgram  = deleteProgram;
-window.addLight       = addLight;
-window.removeLight    = removeLight;
-window.addCam         = addCam;
-window.removeCam      = removeCam;
-window.setLightColor  = setLightColor;
+window.addLight       = ()=>{};   // 固定 7 燈，不新增
+window.removeLight    = ()=>{};   // 固定 7 燈，不刪除
+window.addCam         = id=>{const p=getP(id);p.cameras.push({name:`C${p.cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});renderMain();saveProgram(p);};
+window.removeCam      = (id,idx)=>{const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);};
+window.togglePower    = togglePower;
+window.setFixture     = setFixture;
+window.setHoneycomb   = setHoneycomb;
+window.setLightColor  = ()=>{};  // 已不使用
 window.setLightRGB    = setLightRGB;
 window.fmtPct = fmtPct; window.fmtK = fmtK;
 window.fmtH = fmtH; window.fmtS = fmtS; window.fmtI = fmtI;
