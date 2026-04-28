@@ -133,8 +133,9 @@
   .light-card.g-green  .power-btn.on { color: #3ecf6a; }
   /* 燈具選擇 */
   .fixture-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
-  .fixture-btn { font-size: 11px; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #aaa; cursor: pointer; transition: all 0.15s; }
-  .fixture-btn.active { background: rgba(255,255,255,0.15); color: #eee; border-color: rgba(255,255,255,0.4); }
+  .fixture-btn { font-size: 11px; padding: 3px 9px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: #555; cursor: pointer; transition: all 0.15s; }
+  .fixture-btn:hover { color: #aaa; border-color: rgba(255,255,255,0.25); }
+  .fixture-btn.active { background: rgba(255,255,255,0.18); color: #eee; border-color: rgba(255,255,255,0.45); font-weight: 600; }
   .honeycomb-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
   .honeycomb-row label { font-size: 11px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
@@ -156,11 +157,31 @@
   .cam-field input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 8px; color: #eee; font-size: 13px; font-weight: 500; outline: none; font-family: 'Courier New', monospace; width: 100%; min-width: 0; }
   .cam-field input:focus { border-color: var(--blue); }
   .cam-field.full { grid-column: 1 / -1; }
-  .cam-add-btn { margin-top: 14px; padding: 10px; width: 100%; border: 1px dashed rgba(255,255,255,0.2); border-radius: var(--radius-sm); background: none; color: #777; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-  .cam-add-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .cam-img-zone { border-radius: var(--radius-sm); overflow: hidden; background: #2a2a2a; min-height: 150px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; margin-top: 14px; }
-  .cam-img-zone img { width: 100%; object-fit: contain; }
-  .cam-img-hint { color: #666; font-size: 11px; text-align: center; }
+  /* ── CAM SLIDE UI ── */
+  .cam-slide { flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; }
+  .cam-slide-img { position: relative; cursor: pointer; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #2e2e2e; }
+  .cam-slide-img img { width: 100%; max-height: 380px; object-fit: contain; display: block; }
+  .cam-slide-img .cam-img-hint { color: #555; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .cam-slide-img .cam-img-hint span:first-child { font-size: 24px; }
+  .cam-slide-img .img-change-btn { position: absolute; top: 8px; right: 8px; display: none; }
+  .cam-slide-img:hover .img-change-btn { display: block; }
+  .cam-slide-info { padding: 12px 14px; }
+  .cam-slide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cam-slide-name { font-size: 14px; font-weight: 700; color: var(--blue); background: none; border: none; font-family: inherit; outline: none; min-width: 0; flex: 1; }
+  .cam-slide-note { font-size: 11px; color: #888; background: none; border: none; font-family: inherit; outline: none; min-width: 0; width: 120px; }
+  .cam-specs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .cam-spec { display: flex; flex-direction: column; gap: 2px; }
+  .cam-spec label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cam-spec input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; padding: 4px 6px; color: #ddd; font-size: 11px; font-family: 'Courier New', monospace; outline: none; width: 100%; }
+  .cam-spec input:focus { border-color: var(--blue); }
+  /* 上線畫面 shot-type */
+  .shot-type-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+  .shot-btn { font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: none; color: #666; cursor: pointer; transition: all 0.15s; }
+  .shot-btn.active { background: rgba(255,255,255,0.12); color: #ccc; border-color: rgba(255,255,255,0.3); }
+  @media (max-width: 600px) {
+    .cam-slide { width: 90%; }
+    .cam-specs { grid-template-columns: repeat(3, 1fr); }
+  }
 
   .onair-zone { border-radius: var(--radius); overflow: hidden; background: #3a3a3a; min-height: 300px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; position: relative; }
   .onair-zone img { width: 100%; object-fit: contain; }
@@ -540,7 +561,7 @@ function renderScene(p) {
   // 只保留 7 個
   p.lights = p.lights.slice(0, 7);
 
-  const FIXTURES = ['圓','方','傘','標','裸'];
+  const FIXTURES = ['圓','方','球','傘','標'];
   const lightCards = p.lights.map((l, i) => {
     const def = FIXED_LIGHTS[i];
     const isOn = l.on !== false;
@@ -621,64 +642,109 @@ function renderScene(p) {
   </div>`;
 }
 
-function renderOnair(p) {
-  if (!p.onairImgs) p.onairImgs = p.onairImg ? [{src:p.onairImg,label:'上線畫面'}] : [];
-
-  const slides = p.onairImgs.map((img,i)=>`
-    <div class="onair-slide">
-      <img src="${img.src}">
-      <div class="slide-label">
-        <input value="${esc(img.label||'')}" placeholder="畫面說明（A Cam、B Cam…）"
-          oninput="getP(${p.id}).onairImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
-          onclick="event.stopPropagation()">
-        <button class="slide-del" onclick="removeOnairImg(${p.id},${i})">✕</button>
-      </div>
-    </div>`).join('');
-
-  return `<div class="panel active">
-    <div class="sec-label">上線畫面 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動瀏覽 →</span></div>
-    <div class="gallery-slider" id="onairSlider${p.id}">
-      ${slides}
-      <div class="gallery-add-slide" id="onairDropZone${p.id}"
-        onclick="document.getElementById('onairFileAdd${p.id}').click()"
-        ondragover="event.preventDefault();this.classList.add('drag-over')"
-        ondragleave="this.classList.remove('drag-over')"
-        ondrop="this.classList.remove('drag-over');dropFiles(event,'onair',${p.id})">
-        <span>🎬</span><span>拖放或點擊</span><span style="font-size:10px;color:#555">新增畫面</span>
-      </div>
-    </div>
-    <input type="file" accept="image/*" multiple id="onairFileAdd${p.id}" style="display:none"
-      onchange="addOnairImgs(${p.id},this)">
-    <textarea class="note-area" rows="4" placeholder="上線備註、注意事項…"
-      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote)}</textarea>
-  </div>`;
-}
 function renderCamera(p) {
-  const cards=p.cameras.map((c,i)=>`
-    <div class="cam-card">
-      <div class="cam-card-header">
-        <input class="cam-name" value="${esc(c.name)}" oninput="getP(${p.id}).cameras[${i}].name=this.value;debouncedSave(getP(${p.id}))">
-        <button class="rm-btn" onclick="removeCam(${p.id},${i})">✕</button>
-      </div>
-      <div class="cam-fields">
-        <div class="cam-field"><label>光圈</label><input value="${esc(c.aperture)}" placeholder="F2.8" oninput="getP(${p.id}).cameras[${i}].aperture=this.value;debouncedSave(getP(${p.id}))"></div>
-        <div class="cam-field"><label>快門</label><input value="${esc(c.shutter)}" placeholder="1/60" oninput="getP(${p.id}).cameras[${i}].shutter=this.value;debouncedSave(getP(${p.id}))"></div>
-        <div class="cam-field"><label>ISO / dB</label><input value="${esc(c.iso)}" placeholder="iso800" oninput="getP(${p.id}).cameras[${i}].iso=this.value;debouncedSave(getP(${p.id}))"></div>
-        <div class="cam-field"><label>色溫</label><input value="${esc(c.kelvin)}" placeholder="4200k" oninput="getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"></div>
-        <div class="cam-field full"><label>備註</label><input value="${esc(c.note||'')}" placeholder="用途說明" oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
-      </div>
-      <div class="cam-img-zone"
+  // 確保預設三台攝影機
+  const DEFAULT_CAMS = ['Full','Guest','Host'];
+  if (!p.cameras || p.cameras.length === 0) {
+    p.cameras = DEFAULT_CAMS.map(name => ({name, note:'', aperture:'', shutter:'', iso:'', kelvin:'', img:null}));
+  }
+
+  const slides = p.cameras.map((c,i) => `
+    <div class="cam-slide">
+      <div class="cam-slide-img"
         onclick="document.getElementById('camFile${p.id}_${i}').click()"
         ondragover="event.preventDefault();this.classList.add('drag-over')"
         ondragleave="this.classList.remove('drag-over')"
         ondrop="this.classList.remove('drag-over');dropCamFile(event,${p.id},${i})">
-        ${c.img?`<img src="${c.img}">`:`<div class="cam-img-hint">拖放或點擊上傳</div>`}
+        ${c.img
+          ? `<img src="${c.img}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('camFile${p.id}_${i}').click()">更換圖片</span>`
+          : `<div class="cam-img-hint"><span>＋</span><span>拖放或點擊上傳</span></div>`}
       </div>
       <input type="file" accept="image/*" id="camFile${p.id}_${i}" style="display:none" onchange="handleCamImg(${p.id},${i},this)">
+      <div class="cam-slide-info">
+        <div class="cam-slide-header">
+          <input class="cam-slide-name" value="${esc(c.name)}"
+            oninput="getP(${p.id}).cameras[${i}].name=this.value;debouncedSave(getP(${p.id}))">
+          <input class="cam-slide-note" value="${esc(c.note||'')}" placeholder="機型備註"
+            oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))">
+          <button class="slide-del" onclick="removeCam(${p.id},${i})" style="margin-left:8px">✕</button>
+        </div>
+        <div class="cam-specs">
+          <div class="cam-spec"><label>焦段</label><input value="${esc(c.focal||'')}" placeholder="24mm"
+            oninput="getP(${p.id}).cameras[${i}].focal=this.value;debouncedSave(getP(${p.id}))"></div>
+          <div class="cam-spec"><label>光圈</label><input value="${esc(c.aperture||'')}" placeholder="F2.8"
+            oninput="getP(${p.id}).cameras[${i}].aperture=this.value;debouncedSave(getP(${p.id}))"></div>
+          <div class="cam-spec"><label>快門</label><input value="${esc(c.shutter||'')}" placeholder="1/60"
+            oninput="getP(${p.id}).cameras[${i}].shutter=this.value;debouncedSave(getP(${p.id}))"></div>
+          <div class="cam-spec"><label>ISO</label><input value="${esc(c.iso||'')}" placeholder="800"
+            oninput="getP(${p.id}).cameras[${i}].iso=this.value;debouncedSave(getP(${p.id}))"></div>
+          <div class="cam-spec"><label>色溫</label><input value="${esc(c.kelvin||'')}" placeholder="4200K"
+            oninput="getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"></div>
+        </div>
+      </div>
     </div>`).join('');
-  return `<div class="panel active"><div class="sec-label">攝影機設定</div>
-    <div class="cam-grid">${cards}</div>
-    <button class="cam-add-btn" onclick="addCam(${p.id})">＋ 新增攝影機</button></div>`;
+
+  return `<div class="panel active">
+    <div class="sec-label">攝影機設定 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動 →</span></div>
+    <div class="gallery-slider" id="camSlider${p.id}">
+      ${slides}
+      <div class="gallery-add-slide"
+        onclick="addCam(${p.id})"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')">
+        <span>＋</span><span>新增攝影機</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderOnair(p) {
+  if (!p.onairImgs) p.onairImgs = p.onairImg ? [{src:p.onairImg,label:'Full',shot:''}] : [];
+  // 確保預設三張
+  if (p.onairImgs.length === 0) {
+    p.onairImgs = [{src:null,label:'Full',shot:''},{src:null,label:'Guest',shot:''},{src:null,label:'Host',shot:''}];
+  }
+
+  const SHOTS = ['全景','中景','特寫'];
+
+  const slides = p.onairImgs.map((img,i) => `
+    <div class="onair-slide"
+      onclick="if(!event.target.closest('.slide-label,.shot-type-row'))document.getElementById('onairFile${p.id}_${i}').click()"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="this.classList.remove('drag-over');dropOnairFile(event,${p.id},${i})">
+      ${img.src
+        ? `<img src="${img.src}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('onairFile${p.id}_${i}').click()">更換圖片</span>`
+        : `<div class="onair-hint"><span>🎬</span><span>拖放或點擊上傳</span></div>`}
+      <div class="slide-label">
+        <input value="${esc(img.label||'')}" placeholder="名稱"
+          oninput="getP(${p.id}).onairImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
+          onclick="event.stopPropagation()">
+        <button class="slide-del" onclick="removeOnairImg(${p.id},${i})">✕</button>
+      </div>
+      <div class="shot-type-row" style="padding:6px 10px 8px">
+        ${SHOTS.map(s=>`<button class="shot-btn${img.shot===s?' active':''}"
+          onclick="event.stopPropagation();getP(${p.id}).onairImgs[${i}].shot='${img.shot===s?'':s}';debouncedSave(getP(${p.id}));renderMain()">${s}</button>`).join('')}
+      </div>
+    </div>
+    <input type="file" accept="image/*" id="onairFile${p.id}_${i}" style="display:none"
+      onchange="handleOnairImg(${p.id},${i},this)">`).join('');
+
+  return `<div class="panel active">
+    <div class="sec-label">上線畫面 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動 →</span></div>
+    <div class="gallery-slider" id="onairSlider${p.id}">
+      ${slides}
+      <div class="gallery-add-slide" id="onairDropZone${p.id}"
+        onclick="addOnairSlide(${p.id})"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="this.classList.remove('drag-over');dropOnairNew(event,${p.id})">
+        <span>🎬</span><span>新增畫面</span>
+      </div>
+    </div>
+    <textarea class="note-area" rows="3" placeholder="上線備註、注意事項…"
+      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote)}</textarea>
+  </div>`;
 }
 
 // ── IMAGE COMPRESS ──
@@ -837,7 +903,57 @@ function fmtI(v) {
   return v;
 }
 
-// ── FIXED LIGHTS ──
+// ── ONAIR / CAM HELPERS ──
+function addOnairSlide(id) {
+  const p = getP(id);
+  if (!p.onairImgs) p.onairImgs = [];
+  // 智慧命名：找最後一個名稱的基底，遞增編號
+  const BASE = ['Full','Guest','Host'];
+  const last = p.onairImgs[p.onairImgs.length - 1];
+  let newLabel = 'Full';
+  if (last && last.label) {
+    // 嘗試找 base 名
+    const match = last.label.match(/^(.+?)(\s*\d+)?$/);
+    const base = match ? match[1].trim() : last.label;
+    const count = p.onairImgs.filter(s => (s.label||'').startsWith(base)).length;
+    newLabel = `${base} ${count + 1}`;
+  }
+  p.onairImgs.push({ src: null, label: newLabel, shot: '' });
+  renderMain(); saveProgram(p);
+}
+
+async function handleOnairImg(id, idx, input) {
+  const file = input.files[0]; if (!file) return;
+  setSyncStatus('saving', '上傳圖片中…');
+  try {
+    const base64 = await compressImg(file, 1400, 0.85);
+    const url = await uploadToCloud(base64);
+    const p = getP(id);
+    if (!p.onairImgs[idx]) p.onairImgs[idx] = { label:'', shot:'' };
+    p.onairImgs[idx].src = url;
+    renderMain(); saveProgram(p);
+  } catch(e) { setSyncStatus('error','上傳失敗'); toast('上傳失敗：' + e.message); }
+}
+
+async function dropOnairFile(id, idx, event) {
+  const file = Array.from(event.dataTransfer.files).find(f => f.type.startsWith('image/'));
+  if (!file) return;
+  await handleOnairImg(id, idx, { files: [file] });
+}
+
+async function dropOnairNew(event, id) {
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (!files.length) { addOnairSlide(id); return; }
+  const p = getP(id);
+  if (!p.onairImgs) p.onairImgs = [];
+  setSyncStatus('saving', `上傳 ${files.length} 張…`);
+  for (const file of files) {
+    const base64 = await compressImg(file, 1400, 0.85);
+    const url = await uploadToCloud(base64);
+    p.onairImgs.push({ src: url, label: '', shot: '' });
+  }
+  renderMain(); saveProgram(p);
+}
 function togglePower(id, idx) {
   const p = getP(id);
   p.lights[idx].on = !(p.lights[idx].on !== false);
@@ -944,9 +1060,22 @@ function filterNav(){const q=document.getElementById('searchInput').value.toLowe
 // 改用直接函式包裝，確保讀寫的是 module 內部變數
 window.addProgram     = addProgram;
 window.deleteProgram  = deleteProgram;
-window.addLight       = ()=>{};   // 固定 7 燈，不新增
-window.removeLight    = ()=>{};   // 固定 7 燈，不刪除
-window.addCam         = id=>{const p=getP(id);p.cameras.push({name:`C${p.cameras.length+1}`,aperture:'',shutter:'',iso:'',kelvin:'',note:'',img:null});renderMain();saveProgram(p);};
+window.addLight       = ()=>{};
+window.removeLight    = ()=>{};
+window.addCam         = id => {
+  const p = getP(id);
+  if (!p.cameras) p.cameras = [];
+  const last = p.cameras[p.cameras.length - 1];
+  let newName = 'Full';
+  if (last && last.name) {
+    const match = last.name.match(/^(.+?)(\s*\d+)?$/);
+    const base = match ? match[1].trim() : last.name;
+    const count = p.cameras.filter(c => (c.name||'').startsWith(base)).length;
+    newName = `${base} ${count + 1}`;
+  }
+  p.cameras.push({name:newName, note:'', focal:'', aperture:'', shutter:'', iso:'', kelvin:'', img:null});
+  renderMain(); saveProgram(p);
+};
 window.removeCam      = (id,idx)=>{const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);};
 window.togglePower    = togglePower;
 window.setFixture     = setFixture;
@@ -959,6 +1088,10 @@ window.handleImg      = handleImg;
 window.addSceneImgs    = addSceneImgs;
 window.removeSceneImg  = removeSceneImg;
 window.addOnairImgs    = addOnairImgs;
+window.addOnairSlide   = addOnairSlide;
+window.handleOnairImg  = handleOnairImg;
+window.dropOnairFile   = dropOnairFile;
+window.dropOnairNew    = dropOnairNew;
 window.removeOnairImg  = removeOnairImg;
 window.dropFiles       = dropFiles;
 window.dropCamFile     = dropCamFile;
