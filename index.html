@@ -183,9 +183,21 @@
     .cam-specs { grid-template-columns: repeat(3, 1fr); }
   }
 
-  .onair-zone { border-radius: var(--radius); overflow: hidden; background: #3a3a3a; min-height: 300px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; position: relative; }
-  .onair-zone img { width: 100%; object-fit: contain; }
-  .onair-hint { color: #666; font-size: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+  .onair-slide { flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; }
+  .onair-slide-img { position: relative; cursor: pointer; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #2e2e2e; }
+  .onair-slide-img img { width: 100%; max-height: 420px; object-fit: contain; display: block; }
+  .onair-slide-img .img-change-btn { position: absolute; top: 8px; right: 8px; display: none; }
+  .onair-slide-img:hover .img-change-btn { display: block; }
+  .onair-slide-img .onair-hint { color: #555; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .onair-slide-img .onair-hint span:first-child { font-size: 28px; }
+  .onair-slide-info { padding: 10px 14px 12px; }
+  .onair-slide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .onair-slide-name { font-size: 14px; font-weight: 700; color: var(--accent); background: none; border: none; font-family: inherit; outline: none; flex: 1; min-width: 0; }
+  .shot-type-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .shot-btn { font-size: 10px; padding: 3px 9px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: none; color: #555; cursor: pointer; transition: all 0.15s; }
+  .shot-btn:hover { color: #aaa; border-color: rgba(255,255,255,0.25); }
+  .shot-btn.active { background: rgba(255,255,255,0.12); color: #ccc; border-color: rgba(255,255,255,0.35); font-weight: 600; }
+  @media (max-width: 600px) { .onair-slide { width: 90%; } }
   .note-area { width: 100%; background: #3c3c3c; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 10px 14px; color: #ddd; font-size: 13px; font-family: inherit; resize: vertical; outline: none; margin-top: 12px; line-height: 1.6; }
   .note-area:focus { border-color: rgba(255,255,255,0.25); }
 
@@ -708,27 +720,31 @@ function renderOnair(p) {
   const SHOTS = ['全景','中景','特寫'];
 
   const slides = p.onairImgs.map((img,i) => `
-    <div class="onair-slide"
-      onclick="if(!event.target.closest('.slide-label,.shot-type-row'))document.getElementById('onairFile${p.id}_${i}').click()"
-      ondragover="event.preventDefault();this.classList.add('drag-over')"
-      ondragleave="this.classList.remove('drag-over')"
-      ondrop="this.classList.remove('drag-over');dropOnairFile(event,${p.id},${i})">
-      ${img.src
-        ? `<img src="${img.src}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('onairFile${p.id}_${i}').click()">更換圖片</span>`
-        : `<div class="onair-hint"><span>🎬</span><span>拖放或點擊上傳</span></div>`}
-      <div class="slide-label">
-        <input value="${esc(img.label||'')}" placeholder="名稱"
-          oninput="getP(${p.id}).onairImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
-          onclick="event.stopPropagation()">
-        <button class="slide-del" onclick="removeOnairImg(${p.id},${i})">✕</button>
+    <div class="onair-slide">
+      <div class="onair-slide-img"
+        onclick="document.getElementById('onairFile${p.id}_${i}').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="this.classList.remove('drag-over');dropOnairFile(event,${p.id},${i})">
+        ${img.src
+          ? `<img src="${img.src}"><span class="img-change-btn" onclick="event.stopPropagation();document.getElementById('onairFile${p.id}_${i}').click()">更換圖片</span>`
+          : `<div class="onair-hint"><span>🎬</span><span>拖放或點擊上傳</span></div>`}
       </div>
-      <div class="shot-type-row" style="padding:6px 10px 8px">
-        ${SHOTS.map(s=>`<button class="shot-btn${img.shot===s?' active':''}"
-          onclick="event.stopPropagation();getP(${p.id}).onairImgs[${i}].shot='${img.shot===s?'':s}';debouncedSave(getP(${p.id}));renderMain()">${s}</button>`).join('')}
+      <input type="file" accept="image/*" id="onairFile${p.id}_${i}" style="display:none"
+        onchange="handleOnairImg(${p.id},${i},this)">
+      <div class="onair-slide-info">
+        <div class="onair-slide-header">
+          <input class="onair-slide-name" value="${esc(img.label||'')}" placeholder="名稱"
+            oninput="getP(${p.id}).onairImgs[${i}].label=this.value;debouncedSave(getP(${p.id}))"
+            onclick="event.stopPropagation()">
+          <button class="slide-del" onclick="removeOnairImg(${p.id},${i})">✕</button>
+        </div>
+        <div class="shot-type-row">
+          ${SHOTS.map(s=>`<button class="shot-btn${img.shot===s?' active':''}"
+            onclick="event.stopPropagation();getP(${p.id}).onairImgs[${i}].shot='${img.shot===s?'':s}';debouncedSave(getP(${p.id}));renderMain()">${s}</button>`).join('')}
+        </div>
       </div>
-    </div>
-    <input type="file" accept="image/*" id="onairFile${p.id}_${i}" style="display:none"
-      onchange="handleOnairImg(${p.id},${i},this)">`).join('');
+    </div>`).join('');
 
   return `<div class="panel active">
     <div class="sec-label">上線畫面 <span style="color:#555;font-size:10px;text-transform:none">← 左右滑動 →</span></div>
@@ -931,6 +947,7 @@ async function handleOnairImg(id, idx, input) {
     const p = getP(id);
     if (!p.onairImgs[idx]) p.onairImgs[idx] = { label:'', shot:'' };
     p.onairImgs[idx].src = url;
+    // 不用檔名覆蓋 label，保留使用者設定的名稱
     renderMain(); saveProgram(p);
   } catch(e) { setSyncStatus('error','上傳失敗'); toast('上傳失敗：' + e.message); }
 }
