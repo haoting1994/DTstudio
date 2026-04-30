@@ -73,8 +73,9 @@
   .gallery-slider::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
   .gallery-slide { position: relative; flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; }
   .gallery-slide img { width: 100%; max-height: 420px; object-fit: contain; display: block; background: #2e2e2e; }
-  .gallery-slide .slide-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: rgba(0,0,0,0.6); font-size: 12px; color: #ccc; display: flex; align-items: center; justify-content: space-between; }
-  .gallery-slide .slide-label input { background: none; border: none; color: #eee; font-size: 12px; font-family: inherit; outline: none; flex: 1; min-width: 0; }
+  .gallery-slide .slide-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: flex-end; opacity: 0; transition: opacity 0.2s; }
+  .gallery-slide:hover .slide-label { opacity: 1; }
+  .gallery-slide .slide-label input { display: none; }
   .gallery-slide .slide-del { background: none; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
   .gallery-slide .slide-del:hover { color: var(--red); }
   /* Light tags live on the active slide only */
