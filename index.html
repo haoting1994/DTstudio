@@ -468,9 +468,8 @@ function renderMain() {
       </div>
       <div class="header-actions">
         <select class="status-sel" onchange="getP(${p.id}).status=this.value;saveProgram(getP(${p.id}))">
-          ${['準備中','調整中','就緒','上線中','封存'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
+          ${['調整中','就緒','上線中'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
         </select>
-        <button class="btn btn-primary" onclick="saveProgram(getP(${p.id}))">儲存</button>
         <button class="btn btn-danger" onclick="deleteProgram(${p.id})">刪除</button>
       </div>
     </div>
