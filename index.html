@@ -381,19 +381,48 @@ function setSyncStatus(state, text) {
 // ── OFFLINE FALLBACK ──
 const LS_KEY = 'dt_studio_offline';
 let isOffline = false;
-let offlineTimer = null; // 先宣告，後面再賦值
 
 function loadFromLocal() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { return null; }
 }
 function saveToLocal() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(programs)); } catch {}
+  try { localStorage.setItem(LS_KEY, JSON.stringify(programs)); } catch {} 
 }
 
-function activateOffline(reason) {
-  if (isOffline) return;
+// 直接 3 秒後強制顯示畫面（不管 Firebase 有沒有回來）
+setTimeout(() => {
+  const overlay = document.getElementById('loadingOverlay');
+  if (!overlay.classList.contains('hidden')) {
+    isOffline = true;
+    const local = loadFromLocal();
+    if (local && local.length > 0) {
+      programs = local;
+      nextId = Math.max(...programs.map(p=>p.id), 0) + 1;
+      if (!activeId && programs.length) activeId = programs[0].id;
+    }
+    overlay.classList.add('hidden');
+    setSyncStatus('error', '離線模式');
+    render();
+  }
+}, 3000);
+
+// ── FIRESTORE ──
+onSnapshot(colRef(), snap => {
+  isOffline = false;
+  const incoming = [];
+  snap.forEach(d => incoming.push(d.data()));
+  incoming.sort((a,b) => (a.order??a.id) - (b.order??b.id));
+  programs = incoming;
+  nextId = programs.length ? Math.max(...programs.map(p=>p.id))+1 : 1;
+  if (!activeId && programs.length) activeId = programs[0].id;
+  if (activeId && !getP(activeId) && programs.length) activeId = programs[0].id;
+  saveToLocal();
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  setSyncStatus('online', '已同步');
+  render();
+}, err => {
+  console.error('Firestore error:', err);
   isOffline = true;
-  if (offlineTimer) clearTimeout(offlineTimer);
   const local = loadFromLocal();
   if (local && local.length > 0) {
     programs = local;
@@ -402,38 +431,8 @@ function activateOffline(reason) {
   }
   document.getElementById('loadingOverlay').classList.add('hidden');
   setSyncStatus('error', '離線模式');
-  if (reason) toast(reason);
   render();
-}
-
-// 3 秒後若還沒收到 Firebase，切換離線
-offlineTimer = setTimeout(() => activateOffline('Firebase 連線逾時，已切換本機模式'), 3000);
-
-// ── FIRESTORE ──
-let snapshotSetup = false;
-try {
-  onSnapshot(colRef(), snap => {
-    if (!snapshotSetup) { snapshotSetup = true; clearTimeout(offlineTimer); }
-    isOffline = false;
-    const incoming = [];
-    snap.forEach(d => incoming.push(d.data()));
-    incoming.sort((a,b) => (a.order??a.id) - (b.order??b.id));
-    programs = incoming;
-    nextId = programs.length ? Math.max(...programs.map(p=>p.id))+1 : 1;
-    if (!activeId && programs.length) activeId = programs[0].id;
-    if (activeId && !getP(activeId) && programs.length) activeId = programs[0].id;
-    saveToLocal();
-    document.getElementById('loadingOverlay').classList.add('hidden');
-    setSyncStatus('online', '已同步');
-    render();
-  }, err => {
-    console.error('Firestore error:', err);
-    activateOffline('Firebase 連線失敗，已切換本機模式');
-  });
-} catch(e) {
-  console.error('Firestore setup error:', e);
-  activateOffline('Firebase 無法初始化，已切換本機模式');
-}
+});
 
 async function saveProgram(p) {
   saveToLocal(); // 永遠先存本機
