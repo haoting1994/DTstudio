@@ -70,8 +70,21 @@
   .scene-caption input { flex: 1; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 7px 12px; color: #ccc; font-size: 13px; font-family: inherit; outline: none; }
   .scene-caption input:focus { border-color: rgba(255,255,255,0.25); }
   .scene-caption input::placeholder { color: #555; }
-  /* 分類選擇器 */
-  .type-sel { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); color: #aaa; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px; outline: none; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+  /* 分類選擇器 — 圓點樣式 */
+  .type-sel-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; padding: 4px 10px 4px 8px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); transition: border-color 0.15s; }
+  .type-sel-wrap:hover { border-color: rgba(255,255,255,0.28); }
+  .type-sel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transition: background 0.2s; }
+  .type-sel-dot.real  { background: #e8720c; box-shadow: 0 0 5px #e8720c88; }
+  .type-sel-dot.green { background: #3ecf6a; box-shadow: 0 0 5px #3ecf6a88; }
+  .type-sel-dot.none  { background: #444; }
+  .type-sel-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; transition: color 0.2s; }
+  .type-sel-label.real  { color: #e8720c; }
+  .type-sel-label.green { color: #3ecf6a; }
+  .type-sel-label.none  { color: #555; }
+  /* 選了棚別時外框也上色 */
+  .type-sel-wrap:has(.type-sel-dot.real)  { border-color: #e8720c66; }
+  .type-sel-wrap:has(.type-sel-dot.green) { border-color: #3ecf6a55; }
+  .type-sel-wrap select { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
   .editable-title { background: none; border: none; font-size: 22px; font-weight: 600; color: #eee; font-family: inherit; outline: none; width: 100%; }
   .editable-title:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
   .scene-note-input { font-size: 13px; color: #888; background: none; border: none; outline: none; width: 100%; margin-top: 4px; padding: 0; font-family: inherit; }
@@ -583,11 +596,15 @@ function renderMain() {
     <div class="main-header">
       <div class="main-header-left">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <select class="type-sel" onchange="getP(${p.id}).studioType=this.value;debouncedSave(getP(${p.id}));renderNav();renderMobileNav()">
-            <option value="" ${!p.studioType?'selected':''}>未分類</option>
-            <option value="real" ${p.studioType==='real'?'selected':''}>實景棚</option>
-            <option value="green" ${p.studioType==='green'?'selected':''}>綠幕棚</option>
-          </select>
+          <div class="type-sel-wrap" title="點選切換棚別">
+            <span class="type-sel-dot ${p.studioType==='real'?'real':p.studioType==='green'?'green':'none'}"></span>
+            <span class="type-sel-label ${p.studioType==='real'?'real':p.studioType==='green'?'green':'none'}">${p.studioType==='real'?'實景棚':p.studioType==='green'?'綠幕棚':'棚別'}</span>
+            <select onchange="getP(${p.id}).studioType=this.value;debouncedSave(getP(${p.id}));renderNav();renderMobileNav();renderMain()">
+              <option value="" ${!p.studioType?'selected':''}>未分類</option>
+              <option value="real" ${p.studioType==='real'?'selected':''}>實景棚</option>
+              <option value="green" ${p.studioType==='green'?'selected':''}>綠幕棚</option>
+            </select>
+          </div>
           <input class="editable-title" value="${esc(p.name)}"
             oninput="getP(${p.id}).name=this.value;renderNav();renderMobileNav();debouncedSave(getP(${p.id}))">
         </div>
