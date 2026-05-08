@@ -1186,7 +1186,7 @@ document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDr
 document.addEventListener('touchend',()=>{if(dragging){saveProgram(getP(dragging.pid));dragging=null;}});
 
 // ── CATEGORY DROP ──
-let catDropTargetId = null; // 拖移開始時記錄，防止 navDragEnd 清掉前 catDrop 來不及拿到
+// 拖移開始時記錄，防止 navDragEnd 清掉前 catDrop 來不及拿到
 
 function catDragOver(e, cat) {
   e.preventDefault();
