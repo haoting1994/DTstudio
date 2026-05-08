@@ -44,11 +44,34 @@
   .nav-item:hover .drag-handle { opacity: 1; }
   .nav-item.drag-over { border-top: 2px solid var(--accent); }
   .nav-item.dragging-item { opacity: 0.4; }
+  /* 分類區塊 header */
+  .nav-category { padding: 10px 14px 4px; display: flex; align-items: center; gap: 6px; user-select: none; }
+  .nav-category-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .nav-category-dot.real { background: #e8720c; }
+  .nav-category-dot.green { background: #3ecf6a; }
+  .nav-category-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav-category-label.real { color: #e8720c; }
+  .nav-category-label.green { color: #3ecf6a; }
+  .nav-category-label.none { color: #555; }
+  .nav-category-dot.none { background: #444; }
+  /* drop zone highlight on category */
+  .nav-category.drop-active { background: rgba(255,255,255,0.05); border-radius: 4px; }
   .nav-add { margin: 8px 12px; padding: 7px; border: 1px dashed #555; border-radius: var(--radius-sm); font-size: 12px; color: #777; text-align: center; cursor: pointer; transition: all 0.15s; }
   .nav-add:hover { border-color: var(--accent); color: var(--accent); }
 
   .main-header { padding: 24px 28px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .main-header-left { flex: 1; min-width: 0; }
+  /* 節目分類標籤 */
+  .studio-badge { font-size: 9px; padding: 1px 5px; border-radius: 3px; flex-shrink: 0; font-weight: 600; letter-spacing: 0.04em; white-space: nowrap; }
+  .studio-badge.real  { background: rgba(232,114,12,0.2); color: #e8720c; border: 1px solid rgba(232,114,12,0.4); }
+  .studio-badge.green-studio { background: rgba(62,207,106,0.15); color: #3ecf6a; border: 1px solid rgba(62,207,106,0.3); }
+  /* 場景圖說欄 */
+  .scene-caption { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .scene-caption input { flex: 1; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 7px 12px; color: #ccc; font-size: 13px; font-family: inherit; outline: none; }
+  .scene-caption input:focus { border-color: rgba(255,255,255,0.25); }
+  .scene-caption input::placeholder { color: #555; }
+  /* 分類選擇器 */
+  .type-sel { background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); color: #aaa; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 11px; outline: none; cursor: pointer; font-family: inherit; flex-shrink: 0; }
   .editable-title { background: none; border: none; font-size: 22px; font-weight: 600; color: #eee; font-family: inherit; outline: none; width: 100%; }
   .editable-title:focus { border-bottom: 1px solid rgba(255,255,255,0.2); }
   .scene-note-input { font-size: 13px; color: #888; background: none; border: none; outline: none; width: 100%; margin-top: 4px; padding: 0; font-family: inherit; }
@@ -286,7 +309,7 @@
 
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <div class="loading-text">連線 Firebase 中…</div>
+  <div class="loading-text" id="loadingText">連線 Firebase 中…</div>
 </div>
 
 <div class="app">
@@ -345,7 +368,7 @@ const docRef = id => doc(db, COL, String(id));
 // ── STATE ──
 let programs = [], activeId = null, activeTab = 'scene', nextId = 1;
 let dragging = null, dragOffX = 0, dragOffY = 0;
-let navDraggingId = null, saveTimer = null;
+let navDraggingId = null, saveTimer = null, catDropTargetId = null;
 
 // ── SYNC STATUS ──
 function setSyncStatus(state, text) {
@@ -355,21 +378,68 @@ function setSyncStatus(state, text) {
   sp.textContent = text;
 }
 
-// ── FIRESTORE ──
-onSnapshot(colRef(), snap => {
-  const incoming = [];
-  snap.forEach(d => incoming.push(d.data()));
-  incoming.sort((a,b) => (a.order??a.id) - (b.order??b.id));
-  programs = incoming;
-  nextId   = programs.length ? Math.max(...programs.map(p=>p.id))+1 : 1;
-  if (!activeId && programs.length) activeId = programs[0].id;
-  if (activeId && !getP(activeId) && programs.length) activeId = programs[0].id;
+// ── OFFLINE FALLBACK ──
+const LS_KEY = 'dt_studio_offline';
+let isOffline = false;
+
+function loadFromLocal() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { return null; }
+}
+function saveToLocal() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(programs)); } catch {}
+}
+
+function activateOffline(reason) {
+  if (isOffline) return;
+  isOffline = true;
+  clearTimeout(offlineTimer);
+  const local = loadFromLocal();
+  if (local && local.length > 0) {
+    programs = local;
+    nextId = Math.max(...programs.map(p=>p.id), 0) + 1;
+    if (!activeId && programs.length) activeId = programs[0].id;
+  }
   document.getElementById('loadingOverlay').classList.add('hidden');
-  setSyncStatus('online', '已同步');
+  setSyncStatus('error', '離線模式');
+  if (reason) toast(reason);
   render();
-}, err => { setSyncStatus('error', '連線失敗'); console.error(err); });
+}
+
+// 3 秒後若還沒收到 Firebase，切換離線
+const offlineTimer = setTimeout(() => activateOffline('Firebase 連線逾時，已切換本機模式'), 3000);
+
+// ── FIRESTORE ──
+let snapshotSetup = false;
+try {
+  onSnapshot(colRef(), snap => {
+    if (!snapshotSetup) { snapshotSetup = true; clearTimeout(offlineTimer); }
+    isOffline = false;
+    const incoming = [];
+    snap.forEach(d => incoming.push(d.data()));
+    incoming.sort((a,b) => (a.order??a.id) - (b.order??b.id));
+    programs = incoming;
+    nextId = programs.length ? Math.max(...programs.map(p=>p.id))+1 : 1;
+    if (!activeId && programs.length) activeId = programs[0].id;
+    if (activeId && !getP(activeId) && programs.length) activeId = programs[0].id;
+    saveToLocal();
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    setSyncStatus('online', '已同步');
+    render();
+  }, err => {
+    console.error('Firestore error:', err);
+    activateOffline('Firebase 連線失敗，已切換本機模式');
+  });
+} catch(e) {
+  console.error('Firestore setup error:', e);
+  activateOffline('Firebase 無法初始化，已切換本機模式');
+}
 
 async function saveProgram(p) {
+  saveToLocal(); // 永遠先存本機
+  if (isOffline) {
+    toast('已存到本機（離線模式）');
+    return;
+  }
   setSyncStatus('saving', '儲存中…');
   try {
     await setDoc(docRef(p.id), p);
@@ -385,9 +455,14 @@ async function saveProgram(p) {
   }
 }
 async function removeProgram(id) {
+  programs = programs.filter(p => p.id !== id);
+  saveToLocal();
+  if (isOffline) return;
   try { await deleteDoc(docRef(id)); } catch(e) { setSyncStatus('error', '刪除失敗'); }
 }
 async function saveOrder() {
+  saveToLocal();
+  if (isOffline) return;
   try { await Promise.all(programs.map((p,i) => setDoc(docRef(p.id), {...p, order:i}))); setSyncStatus('online','已同步'); }
   catch(e) { setSyncStatus('error','儲存失敗'); }
 }
@@ -447,27 +522,62 @@ function deleteProgram(id) {
 function render() { renderNav(); renderMobileNav(); renderMain(); }
 
 function renderNav() {
-  const nav=document.getElementById('navList'); if(!nav) return;
-  nav.innerHTML=programs.map(p=>`
-    <div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}" data-name="${esc(p.name.toLowerCase())}"
-      draggable="true" onclick="navClick(event,${p.id})"
-      ondragstart="navDragStart(event,${p.id})" ondragover="navDragOver(event)"
-      ondragleave="navDragLeave(event)" ondrop="navDrop(event,${p.id})" ondragend="navDragEnd()">
-      <span class="drag-handle">⠿</span>
-      <span class="dot"></span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
-    </div>`).join('');
+  const nav = document.getElementById('navList'); if (!nav) return;
+  const CATS = [
+    { key: 'real',  label: '實景棚', dotCls: 'real',  labelCls: 'real' },
+    { key: 'green', label: '綠幕棚', dotCls: 'green', labelCls: 'green' },
+    { key: '',      label: '未分類', dotCls: 'none',  labelCls: 'none' },
+  ];
+  let html = '';
+  CATS.forEach(cat => {
+    const items = programs.filter(p => (p.studioType||'') === cat.key);
+    if (cat.key === '' && items.length === 0) return; // 沒有未分類就不顯示
+    html += `<div class="nav-category" data-cat="${cat.key}"
+      ondragover="catDragOver(event,'${cat.key}')"
+      ondragleave="catDragLeave(event)"
+      ondrop="catDrop(event,'${cat.key}')">
+      <span class="nav-category-dot ${cat.dotCls}"></span>
+      <span class="nav-category-label ${cat.labelCls}">${cat.label}</span>
+    </div>`;
+    items.forEach(p => {
+      html += `<div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}" data-name="${esc(p.name.toLowerCase())}"
+        draggable="true" onclick="navClick(event,${p.id})"
+        ondragstart="navDragStart(event,${p.id})" ondragover="navDragOver(event)"
+        ondragleave="navDragLeave(event)" ondrop="navDrop(event,${p.id})" ondragend="navDragEnd()"
+        ontouchstart="navTouchStart(event,${p.id})" ontouchmove="navTouchMove(event)" ontouchend="navTouchEnd(event,${p.id})">
+        <span class="drag-handle">⠿</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
+      </div>`;
+    });
+  });
+  nav.innerHTML = html;
 }
 function renderMobileNav() {
-  const p=getP(activeId);
-  const t=document.getElementById('mobileNavTitle'); if(t&&p) t.textContent=p.name;
-  const list=document.getElementById('mobileNavList'); if(!list) return;
-  list.innerHTML=programs.map(p=>`
-    <div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}"
-      onclick="setActiveId(${p.id});setActiveTab('scene');closeMobileNav();render()">
-      <span class="dot"></span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
-    </div>`).join('');
+  const p = getP(activeId);
+  const t = document.getElementById('mobileNavTitle'); if (t && p) t.textContent = p.name;
+  const list = document.getElementById('mobileNavList'); if (!list) return;
+  const CATS = [
+    { key: 'real',  label: '實景棚', labelCls: 'real' },
+    { key: 'green', label: '綠幕棚', labelCls: 'green' },
+    { key: '',      label: '未分類', labelCls: 'none' },
+  ];
+  let html = '';
+  CATS.forEach(cat => {
+    const items = programs.filter(p => (p.studioType||'') === cat.key);
+    if (cat.key === '' && items.length === 0) return;
+    html += `<div class="nav-category">
+      <span class="nav-category-dot ${cat.key||'none'}"></span>
+      <span class="nav-category-label ${cat.labelCls}">${cat.label}</span>
+    </div>`;
+    items.forEach(prog => {
+      html += `<div class="nav-item ${prog.id===activeId?'active':''}" data-id="${prog.id}"
+        onclick="setActiveId(${prog.id});setActiveTab('scene');closeMobileNav();render()">
+        <span class="dot"></span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(prog.name)}</span>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
 }
 function renderMain() {
   const p=getP(activeId), area=document.getElementById('mainArea'); if(!area) return;
@@ -664,6 +774,10 @@ function renderScene(p) {
     </div>
     <input type="file" accept="image/*" multiple id="sceneFileAdd${p.id}" style="display:none"
       onchange="addSceneImgs(${p.id},this)">
+    <div class="scene-caption">
+      <input placeholder="圖說備註（例：展前佈光圖，最後更新 2026/04/23）" value="${esc(p.sceneCaption||'')}"
+        oninput="getP(${p.id}).sceneCaption=this.value;debouncedSave(getP(${p.id}))">
+    </div>
     <div class="panel-gap">
       <div class="sec-label">燈光設定</div>
       <div class="lights-grid">${lightCards}</div>
@@ -1071,19 +1185,100 @@ document.addEventListener('mouseup',()=>{if(dragging){saveProgram(getP(dragging.
 document.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDraggingTag(e.touches[0].clientX,e.touches[0].clientY);}},{passive:false});
 document.addEventListener('touchend',()=>{if(dragging){saveProgram(getP(dragging.pid));dragging=null;}});
 
+// ── CATEGORY DROP ──
+let catDropTargetId = null; // 拖移開始時記錄，防止 navDragEnd 清掉前 catDrop 來不及拿到
+
+function catDragOver(e, cat) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drop-active');
+}
+function catDragLeave(e) {
+  e.currentTarget.classList.remove('drop-active');
+}
+function catDrop(e, cat) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('drop-active');
+  // 用 catDropTargetId 或 navDraggingId（哪個有值就用哪個）
+  const id = navDraggingId || catDropTargetId;
+  if (!id) return;
+  const p = getP(id);
+  if (!p) return;
+  p.studioType = cat;
+  navDraggingId = null;
+  catDropTargetId = null;
+  renderNav(); saveProgram(p);
+}
+
 // ── NAV DRAG ──
 function navClick(e,id){if(e.target.classList.contains('drag-handle'))return;activeId=id;activeTab='scene';render();}
-function navDragStart(e,id){navDraggingId=id;e.currentTarget.classList.add('dragging-item');e.dataTransfer.effectAllowed='move';}
+function navDragStart(e,id){
+  navDraggingId=id;
+  catDropTargetId=id; // 備份，防止 navDragEnd 在 drop 前清掉
+  e.currentTarget.classList.add('dragging-item');
+  e.dataTransfer.effectAllowed='move';
+}
 function navDragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
 function navDragLeave(e){e.currentTarget.classList.remove('drag-over');}
 function navDrop(e,tid){
   e.preventDefault();e.currentTarget.classList.remove('drag-over');
   if(navDraggingId===tid)return;
   const fi=programs.findIndex(p=>p.id===navDraggingId),ti=programs.findIndex(p=>p.id===tid);
+  if(fi<0||ti<0)return;
   const[moved]=programs.splice(fi,1);programs.splice(ti,0,moved);
   renderNav();saveOrder();
 }
-function navDragEnd(){navDraggingId=null;document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('dragging-item','drag-over'));}
+function navDragEnd(){
+  navDraggingId=null;
+  // catDropTargetId 由 catDrop 自己清除，這裡不清
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('dragging-item','drag-over'));
+  document.querySelectorAll('.nav-category').forEach(el=>el.classList.remove('drop-active'));
+}
+
+// ── TOUCH DRAG REORDER (iPad) ──
+let navTouchDraggingId=null, navTouchGhost=null, navTouchStartY=0;
+function navTouchStart(e, id) {
+  navTouchDraggingId = id;
+  navTouchStartY = e.touches[0].clientY;
+  const el = e.currentTarget;
+  el.classList.add('dragging-item');
+}
+function navTouchMove(e) {
+  if (!navTouchDraggingId) return;
+  e.preventDefault();
+  const y = e.touches[0].clientY;
+  const nav = document.getElementById('navList');
+  const items = [...nav.querySelectorAll('.nav-item:not(.dragging-item)')];
+  // 找最近的目標
+  let closest = null, minDist = Infinity;
+  items.forEach(el => {
+    const box = el.getBoundingClientRect();
+    const mid = box.top + box.height / 2;
+    const dist = Math.abs(y - mid);
+    if (dist < minDist) { minDist = dist; closest = el; }
+  });
+  items.forEach(el => el.classList.remove('drag-over'));
+  if (closest) closest.classList.add('drag-over');
+}
+function navTouchEnd(e, id) {
+  const nav = document.getElementById('navList');
+  const target = nav.querySelector('.nav-item.drag-over');
+  if (target && target.dataset.id) {
+    const tid = parseInt(target.dataset.id);
+    if (tid !== navTouchDraggingId) {
+      const fi = programs.findIndex(p => p.id === navTouchDraggingId);
+      const ti = programs.findIndex(p => p.id === tid);
+      const [moved] = programs.splice(fi, 1);
+      programs.splice(ti, 0, moved);
+      saveOrder();
+    }
+  }
+  navTouchDraggingId = null;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('dragging-item','drag-over'));
+  renderNav();
+}
 
 // ── MOBILE ──
 function toggleMobileNav(){const l=document.getElementById('mobileNavList'),b=document.getElementById('mobileNavToggle');const o=l.classList.toggle('open');b.textContent=o?'✕':'☰';}
@@ -1136,12 +1331,18 @@ window.saveProgram    = saveProgram;
 window.getP           = getP;
 window.startDrag      = startDrag;
 window.startTouchDrag = startTouchDrag;
+window.catDragOver    = catDragOver;
+window.catDragLeave   = catDragLeave;
+window.catDrop        = catDrop;
 window.navClick       = navClick;
 window.navDragStart   = navDragStart;
 window.navDragOver    = navDragOver;
 window.navDragLeave   = navDragLeave;
 window.navDrop        = navDrop;
 window.navDragEnd     = navDragEnd;
+window.navTouchStart  = navTouchStart;
+window.navTouchMove   = navTouchMove;
+window.navTouchEnd    = navTouchEnd;
 window.toggleMobileNav = toggleMobileNav;
 window.closeMobileNav  = closeMobileNav;
 window.filterNav      = filterNav;
