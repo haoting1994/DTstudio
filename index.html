@@ -368,7 +368,7 @@ const docRef = id => doc(db, COL, String(id));
 // ── STATE ──
 let programs = [], activeId = null, activeTab = 'scene', nextId = 1;
 let dragging = null, dragOffX = 0, dragOffY = 0;
-let navDraggingId = null, saveTimer = null, catDropTargetId = null;
+let navDraggingId = null, saveTimer = null;
 
 // ── SYNC STATUS ──
 function setSyncStatus(state, text) {
@@ -533,9 +533,7 @@ function renderNav() {
     const items = programs.filter(p => (p.studioType||'') === cat.key);
     if (cat.key === '' && items.length === 0) return; // 沒有未分類就不顯示
     html += `<div class="nav-category" data-cat="${cat.key}"
-      ondragover="catDragOver(event,'${cat.key}')"
-      ondragleave="catDragLeave(event)"
-      ondrop="catDrop(event,'${cat.key}')">
+>
       <span class="nav-category-dot ${cat.dotCls}"></span>
       <span class="nav-category-label ${cat.labelCls}">${cat.label}</span>
     </div>`;
@@ -543,8 +541,7 @@ function renderNav() {
       html += `<div class="nav-item ${p.id===activeId?'active':''}" data-id="${p.id}" data-name="${esc(p.name.toLowerCase())}"
         draggable="true" onclick="navClick(event,${p.id})"
         ondragstart="navDragStart(event,${p.id})" ondragover="navDragOver(event)"
-        ondragleave="navDragLeave(event)" ondrop="navDrop(event,${p.id})" ondragend="navDragEnd()"
-        ontouchstart="navTouchStart(event,${p.id})" ontouchmove="navTouchMove(event)" ontouchend="navTouchEnd(event,${p.id})">
+        ondragleave="navDragLeave(event)" ondrop="navDrop(event,${p.id})" ondragend="navDragEnd()">
         <span class="drag-handle">⠿</span>
         <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span>
       </div>`;
@@ -585,8 +582,15 @@ function renderMain() {
   area.innerHTML=`
     <div class="main-header">
       <div class="main-header-left">
-        <input class="editable-title" value="${esc(p.name)}"
-          oninput="getP(${p.id}).name=this.value;renderNav();renderMobileNav();debouncedSave(getP(${p.id}))">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <select class="type-sel" onchange="getP(${p.id}).studioType=this.value;debouncedSave(getP(${p.id}));renderNav();renderMobileNav()">
+            <option value="" ${!p.studioType?'selected':''}>未分類</option>
+            <option value="real" ${p.studioType==='real'?'selected':''}>實景棚</option>
+            <option value="green" ${p.studioType==='green'?'selected':''}>綠幕棚</option>
+          </select>
+          <input class="editable-title" value="${esc(p.name)}"
+            oninput="getP(${p.id}).name=this.value;renderNav();renderMobileNav();debouncedSave(getP(${p.id}))">
+        </div>
         <input class="scene-note-input" placeholder="場景說明備註…" value="${esc(p.sceneNote)}"
           oninput="getP(${p.id}).sceneNote=this.value;debouncedSave(getP(${p.id}))">
       </div>
@@ -1188,35 +1192,10 @@ document.addEventListener('touchend',()=>{if(dragging){saveProgram(getP(dragging
 // ── CATEGORY DROP ──
 // 拖移開始時記錄，防止 navDragEnd 清掉前 catDrop 來不及拿到
 
-function catDragOver(e, cat) {
-  e.preventDefault();
-  e.stopPropagation();
-  e.dataTransfer.dropEffect = 'move';
-  e.currentTarget.classList.add('drop-active');
-}
-function catDragLeave(e) {
-  e.currentTarget.classList.remove('drop-active');
-}
-function catDrop(e, cat) {
-  e.preventDefault();
-  e.stopPropagation();
-  e.currentTarget.classList.remove('drop-active');
-  // 用 catDropTargetId 或 navDraggingId（哪個有值就用哪個）
-  const id = navDraggingId || catDropTargetId;
-  if (!id) return;
-  const p = getP(id);
-  if (!p) return;
-  p.studioType = cat;
-  navDraggingId = null;
-  catDropTargetId = null;
-  renderNav(); saveProgram(p);
-}
-
 // ── NAV DRAG ──
 function navClick(e,id){if(e.target.classList.contains('drag-handle'))return;activeId=id;activeTab='scene';render();}
 function navDragStart(e,id){
   navDraggingId=id;
-  catDropTargetId=id; // 備份，防止 navDragEnd 在 drop 前清掉
   e.currentTarget.classList.add('dragging-item');
   e.dataTransfer.effectAllowed='move';
 }
@@ -1232,52 +1211,8 @@ function navDrop(e,tid){
 }
 function navDragEnd(){
   navDraggingId=null;
-  // catDropTargetId 由 catDrop 自己清除，這裡不清
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('dragging-item','drag-over'));
   document.querySelectorAll('.nav-category').forEach(el=>el.classList.remove('drop-active'));
-}
-
-// ── TOUCH DRAG REORDER (iPad) ──
-let navTouchDraggingId=null, navTouchGhost=null, navTouchStartY=0;
-function navTouchStart(e, id) {
-  navTouchDraggingId = id;
-  navTouchStartY = e.touches[0].clientY;
-  const el = e.currentTarget;
-  el.classList.add('dragging-item');
-}
-function navTouchMove(e) {
-  if (!navTouchDraggingId) return;
-  e.preventDefault();
-  const y = e.touches[0].clientY;
-  const nav = document.getElementById('navList');
-  const items = [...nav.querySelectorAll('.nav-item:not(.dragging-item)')];
-  // 找最近的目標
-  let closest = null, minDist = Infinity;
-  items.forEach(el => {
-    const box = el.getBoundingClientRect();
-    const mid = box.top + box.height / 2;
-    const dist = Math.abs(y - mid);
-    if (dist < minDist) { minDist = dist; closest = el; }
-  });
-  items.forEach(el => el.classList.remove('drag-over'));
-  if (closest) closest.classList.add('drag-over');
-}
-function navTouchEnd(e, id) {
-  const nav = document.getElementById('navList');
-  const target = nav.querySelector('.nav-item.drag-over');
-  if (target && target.dataset.id) {
-    const tid = parseInt(target.dataset.id);
-    if (tid !== navTouchDraggingId) {
-      const fi = programs.findIndex(p => p.id === navTouchDraggingId);
-      const ti = programs.findIndex(p => p.id === tid);
-      const [moved] = programs.splice(fi, 1);
-      programs.splice(ti, 0, moved);
-      saveOrder();
-    }
-  }
-  navTouchDraggingId = null;
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('dragging-item','drag-over'));
-  renderNav();
 }
 
 // ── MOBILE ──
@@ -1331,18 +1266,12 @@ window.saveProgram    = saveProgram;
 window.getP           = getP;
 window.startDrag      = startDrag;
 window.startTouchDrag = startTouchDrag;
-window.catDragOver    = catDragOver;
-window.catDragLeave   = catDragLeave;
-window.catDrop        = catDrop;
 window.navClick       = navClick;
 window.navDragStart   = navDragStart;
 window.navDragOver    = navDragOver;
 window.navDragLeave   = navDragLeave;
 window.navDrop        = navDrop;
 window.navDragEnd     = navDragEnd;
-window.navTouchStart  = navTouchStart;
-window.navTouchMove   = navTouchMove;
-window.navTouchEnd    = navTouchEnd;
 window.toggleMobileNav = toggleMobileNav;
 window.closeMobileNav  = closeMobileNav;
 window.filterNav      = filterNav;
