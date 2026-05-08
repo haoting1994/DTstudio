@@ -381,6 +381,7 @@ function setSyncStatus(state, text) {
 // ── OFFLINE FALLBACK ──
 const LS_KEY = 'dt_studio_offline';
 let isOffline = false;
+let offlineTimer = null; // 先宣告，後面再賦值
 
 function loadFromLocal() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { return null; }
@@ -392,7 +393,7 @@ function saveToLocal() {
 function activateOffline(reason) {
   if (isOffline) return;
   isOffline = true;
-  clearTimeout(offlineTimer);
+  if (offlineTimer) clearTimeout(offlineTimer);
   const local = loadFromLocal();
   if (local && local.length > 0) {
     programs = local;
@@ -406,7 +407,7 @@ function activateOffline(reason) {
 }
 
 // 3 秒後若還沒收到 Firebase，切換離線
-const offlineTimer = setTimeout(() => activateOffline('Firebase 連線逾時，已切換本機模式'), 3000);
+offlineTimer = setTimeout(() => activateOffline('Firebase 連線逾時，已切換本機模式'), 3000);
 
 // ── FIRESTORE ──
 let snapshotSetup = false;
