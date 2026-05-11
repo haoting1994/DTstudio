@@ -631,10 +631,15 @@ function renderMain() {
 function renderScene(p) {
   if (!p.sceneImgs) p.sceneImgs = p.sceneImg ? [{src:p.sceneImg,label:'佈光圖'}] : [];
 
+  // 依棚別決定燈光配置
+  const isGreenStudio = p.studioType === 'green';
+
   // 顏色 → CSS class
   const colorClass = c => ({'orange':'c-orange','yellow':'c-yellow','blue':'c-blue','white':'c-white'}[c]||'c-orange');
 
-  const FIXED_LIGHTS_DEF = [
+  const FIXED_LIGHTS_DEF = isGreenStudio ? [
+    {key:'G1',group:'green'},{key:'G2',group:'green'},{key:'G3',group:'green'},
+  ] : [
     {key:'A1',group:'yellow'},{key:'A2',group:'yellow'},
     {key:'B1',group:'blue'},{key:'B2',group:'blue'},
     {key:'C1',group:'green'},{key:'C2',group:'green'},{key:'C3',group:'green'},
@@ -699,8 +704,12 @@ function renderScene(p) {
       </div>
     </div>`).join('');
 
-  // 固定燈光定義
-  const FIXED_LIGHTS = [
+  // 依棚別選擇燈光配置
+  const FIXED_LIGHTS = isGreenStudio ? [
+    {key:'G1', label:'G1 (200x)', group:'green'},
+    {key:'G2', label:'G2 (200x)', group:'green'},
+    {key:'G3', label:'G3 (200x)', group:'green'},
+  ] : [
     {key:'A1', label:'A1 (360c)', group:'yellow'},
     {key:'A2', label:'A2 (360c)', group:'yellow'},
     {key:'B1', label:'B1 (300c)', group:'blue'},
@@ -709,19 +718,20 @@ function renderScene(p) {
     {key:'C2', label:'C2 (200x)', group:'green'},
     {key:'C3', label:'C3 (200x)', group:'green'},
   ];
-  // 確保 p.lights 有 7 個並對應 key
+  const lightCount = FIXED_LIGHTS.length;
+  // 確保 p.lights 有正確數量並對應 key
   FIXED_LIGHTS.forEach((def, i) => {
     if (!p.lights[i]) p.lights[i] = {};
     const l = p.lights[i];
-    if (!l.key) l.key = def.key;
-    if (l.group === undefined) l.group = def.group;
+    if (!l.key || l.key !== def.key) l.key = def.key;
+    if (l.group === undefined || isGreenStudio) l.group = def.group;
     if (l.on === undefined) l.on = true;
     if (l.fixture === undefined) l.fixture = '';
     if (l.honeycomb === undefined) l.honeycomb = false;
     if (l.isRGB === undefined) l.isRGB = false;
   });
-  // 只保留 7 個
-  p.lights = p.lights.slice(0, 7);
+  // 只保留對應數量
+  p.lights = p.lights.slice(0, lightCount);
 
   const FIXTURES = ['圓','方','球','傘','標'];
   const lightCards = p.lights.map((l, i) => {
