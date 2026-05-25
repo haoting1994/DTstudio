@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>攝影棚場景管理系統</title>
+<title>DT STUDIO · Studio Playbook</title>
 <style>
   :root {
     --bg: #2a2a2a; --bg2: #222; --bg3: #333;
@@ -230,7 +230,21 @@
   .cam-spec label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
   .cam-spec input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; padding: 4px 6px; color: #ddd; font-size: 11px; font-family: 'Courier New', monospace; outline: none; width: 100%; }
   .cam-spec input:focus { border-color: var(--blue); }
-  /* 上線畫面 shot-type */
+  /* YT 連結列 */
+  .yt-link-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 8px 14px; }
+  .yt-icon { color: #ff4444; font-size: 14px; flex-shrink: 0; }
+  .yt-input { flex: 1; background: none; border: none; color: #ccc; font-size: 13px; font-family: inherit; outline: none; min-width: 0; }
+  .yt-input::placeholder { color: #555; }
+  .yt-go-btn { flex-shrink: 0; padding: 4px 12px; border-radius: var(--radius-sm); background: #ff4444; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .yt-go-btn:hover { background: #cc2222; }
+  /* 製作細節 */
+  .production-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .production-block { display: flex; flex-direction: column; }
+  .production-area { flex: 1; min-height: 300px; resize: vertical; }
+  @media (max-width: 600px) {
+    .production-wrap { grid-template-columns: 1fr; }
+    .production-area { min-height: 180px; }
+  }
   .shot-type-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
   .shot-btn { font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: none; color: #666; cursor: pointer; transition: all 0.15s; }
   .shot-btn.active { background: rgba(255,255,255,0.12); color: #ccc; border-color: rgba(255,255,255,0.3); }
@@ -328,8 +342,8 @@
 <div class="app">
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1>DT 攝影棚</h1>
-      <p>場景管理系統</p>
+      <h1>DT STUDIO</h1>
+      <p>Studio Playbook</p>
       <div class="sync-status">
         <span class="sync-dot" id="syncDot"></span>
         <span id="syncText">連線中…</span>
@@ -479,7 +493,7 @@ async function saveOrder() {
   try { await Promise.all(programs.map((p,i) => setDoc(docRef(p.id), {...p, order:i}))); setSyncStatus('online','已同步'); }
   catch(e) { setSyncStatus('error','儲存失敗'); }
 }
-function debouncedSave(p) { clearTimeout(saveTimer); saveTimer = setTimeout(()=>saveProgram(p), 1200); }
+function debouncedSave(p) { clearTimeout(saveTimer); saveTimer = setTimeout(()=>saveProgram(p), 2500); }
 
 // ── SEED ──
 (async()=>{
@@ -524,8 +538,13 @@ function addProgram() {
   activeId=p.id; activeTab='scene';
   saveProgram(p);
 }
+// ── 統一二次確認 ──
+function confirm2(msg) {
+  return confirm('⚠️ ' + msg + '\n\n確定要刪除嗎？');
+}
+
 function deleteProgram(id) {
-  if(!confirm('確定刪除此節目？')) return;
+  if (!confirm2(`刪除節目「${getP(id)?.name || ''}」`)) return;
   const rem=programs.filter(p=>p.id!==id);
   activeId=rem[0]?.id??null;
   removeProgram(id);
@@ -608,8 +627,12 @@ function renderMain() {
           <input class="editable-title" value="${esc(p.name)}"
             oninput="getP(${p.id}).name=this.value;renderNav();renderMobileNav();debouncedSave(getP(${p.id}))">
         </div>
-        <input class="scene-note-input" placeholder="場景說明備註…" value="${esc(p.sceneNote)}"
-          oninput="getP(${p.id}).sceneNote=this.value;debouncedSave(getP(${p.id}))">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="color:#ff4444;font-size:13px;flex-shrink:0">▶</span>
+          <input class="scene-note-input" placeholder="場景說明備註 / YT 連結…" value="${esc(p.sceneNote)}"
+            oninput="getP(${p.id}).sceneNote=this.value;debouncedSave(getP(${p.id}))">
+          ${p.sceneNote && p.sceneNote.startsWith('http') ? `<a href="${esc(p.sceneNote)}" target="_blank" rel="noopener" style="flex-shrink:0;padding:3px 10px;border-radius:4px;background:#ff4444;color:#fff;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">開啟 YT ↗</a>` : ''}
+        </div>
       </div>
       <div class="header-actions">
         <select class="status-sel" onchange="getP(${p.id}).status=this.value;saveProgram(getP(${p.id}))">
@@ -619,11 +642,12 @@ function renderMain() {
       </div>
     </div>
     <div class="section-tabs">
-      <div class="stab ${activeTab==='scene'?'active':''}" onclick="setActiveTab('scene');renderMain()">場景圖 ＋ 燈光</div>
+      <div class="stab ${activeTab==='scene'?'active':''}" onclick="setActiveTab('scene');renderMain()">場佈圖</div>
       <div class="stab ${activeTab==='camera'?'active':''}" onclick="setActiveTab('camera');renderMain()">攝影機設定</div>
       <div class="stab ${activeTab==='onair'?'active':''}" onclick="setActiveTab('onair');renderMain()">上線畫面</div>
+      <div class="stab ${activeTab==='production'?'active':''}" onclick="setActiveTab('production');renderMain()">節目流程</div>
     </div>
-    ${activeTab==='scene'?renderScene(p):activeTab==='camera'?renderCamera(p):renderOnair(p)}`;
+    ${activeTab==='scene'?renderScene(p):activeTab==='camera'?renderCamera(p):activeTab==='onair'?renderOnair(p):renderProduction(p)}`;
   // 等 DOM 更新後夾回超出邊界的標籤
   if (activeTab === 'scene') requestAnimationFrame(() => clampTags(p.id));
 }
@@ -638,10 +662,10 @@ function renderScene(p) {
   const colorClass = c => ({'orange':'c-orange','yellow':'c-yellow','blue':'c-blue','white':'c-white'}[c]||'c-orange');
 
   const FIXED_LIGHTS_DEF = isGreenStudio ? [
-    {key:'G1',group:'green'},{key:'G2',group:'green'},{key:'G3',group:'green'},
+    {key:'G1',group:'green'},{key:'G2',group:'green'},{key:'G3',group:'green'},{key:'G4',group:'green'},
   ] : [
     {key:'A1',group:'yellow'},{key:'A2',group:'yellow'},
-    {key:'B1',group:'blue'},{key:'B2',group:'blue'},
+    {key:'B1',group:'blue'},{key:'B2',group:'blue'},{key:'B3',group:'blue'},
     {key:'C1',group:'green'},{key:'C2',group:'green'},{key:'C3',group:'green'},
   ];
   const tags = p.lights.map((l,i)=>{
@@ -709,11 +733,13 @@ function renderScene(p) {
     {key:'G1', label:'G1 (200x)', group:'green'},
     {key:'G2', label:'G2 (200x)', group:'green'},
     {key:'G3', label:'G3 (200x)', group:'green'},
+    {key:'G4', label:'G4 (200x)', group:'green'},
   ] : [
     {key:'A1', label:'A1 (360c)', group:'yellow'},
     {key:'A2', label:'A2 (360c)', group:'yellow'},
     {key:'B1', label:'B1 (300c)', group:'blue'},
     {key:'B2', label:'B2 (300c)', group:'blue'},
+    {key:'B3', label:'B3 (300c)', group:'blue'},
     {key:'C1', label:'C1 (200x)', group:'green'},
     {key:'C2', label:'C2 (200x)', group:'green'},
     {key:'C3', label:'C3 (200x)', group:'green'},
@@ -920,8 +946,29 @@ function renderOnair(p) {
         <span>🎬</span><span>新增畫面</span>
       </div>
     </div>
-    <textarea class="note-area" rows="3" placeholder="上線備註、注意事項…"
-      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote)}</textarea>
+    <div class="yt-link-row">
+      <span class="yt-icon">▶</span>
+      <input class="yt-input" type="url" placeholder="貼上 YouTube 網址…" value="${esc(p.onairNote||'')}"
+        oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">
+      ${p.onairNote ? `<a class="yt-go-btn" href="${esc(p.onairNote)}" target="_blank" rel="noopener">開啟 YT ↗</a>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderProduction(p) {
+  return `<div class="panel active">
+    <div class="production-wrap">
+      <div class="production-block">
+        <div class="sec-label">規格</div>
+        <textarea class="note-area production-area" rows="8" placeholder="解析度、格式、幀率、音訊規格…&#10;例：4K 29.97P / XAVC-L / 音訊 48kHz"
+          oninput="getP(${p.id}).specNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.specNote||'')}</textarea>
+      </div>
+      <div class="production-block">
+        <div class="sec-label">流程</div>
+        <textarea class="note-area production-area" rows="8" placeholder="拍攝流程、注意事項、SOP…&#10;例：1. 暖機15分鐘 2. 白平衡確認 3. 對焦測試"
+          oninput="getP(${p.id}).flowNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.flowNote||'')}</textarea>
+      </div>
+    </div>
   </div>`;
 }
 
@@ -993,6 +1040,7 @@ async function addSceneImgs(id, input) {
 }
 
 function removeSceneImg(id, idx) {
+  if (!confirm2('刪除這張場佈圖')) return;
   const p = getP(id);
   p.sceneImgs.splice(idx, 1);
   renderMain(); saveProgram(p);
@@ -1019,6 +1067,7 @@ async function addOnairImgs(id, input) {
 }
 
 function removeOnairImg(id, idx) {
+  if (!confirm2('刪除這張上線畫面')) return;
   const p = getP(id);
   p.onairImgs.splice(idx, 1);
   renderMain(); saveProgram(p);
@@ -1250,6 +1299,7 @@ function filterNav(){const q=document.getElementById('searchInput').value.toLowe
 // expose to inline handlers — iOS Safari 不支援 Object.assign getter/setter
 // 改用直接函式包裝，確保讀寫的是 module 內部變數
 window.addProgram     = addProgram;
+window.confirm2       = confirm2;
 window.deleteProgram  = deleteProgram;
 window.addLight       = ()=>{};
 window.removeLight    = ()=>{};
@@ -1267,7 +1317,10 @@ window.addCam         = id => {
   p.cameras.push({name:newName, note:'', focal:'', aperture:'', shutter:'', iso:'', kelvin:'', img:null});
   renderMain(); saveProgram(p);
 };
-window.removeCam      = (id,idx)=>{const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);};
+window.removeCam      = (id,idx)=>{
+  if (!confirm2(`刪除攝影機「${getP(id)?.cameras[idx]?.name||''}」`)) return;
+  const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);
+};
 window.togglePower    = togglePower;
 window.setFixture     = setFixture;
 window.setHoneycomb   = setHoneycomb;
@@ -1305,6 +1358,7 @@ window.filterNav      = filterNav;
 window.renderMain     = renderMain;
 window.renderNav      = renderNav;
 window.renderMobileNav = renderMobileNav;
+window.renderProduction = renderProduction;
 window.render         = render;
 // activeTab / activeId: 讓 inline handler 讀寫時透過函式操作 module 變數
 window.setActiveTab   = v => { activeTab = v; };
