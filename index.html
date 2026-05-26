@@ -225,11 +225,11 @@
   .cam-slide-info { padding: 12px 14px; }
   .cam-slide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
   .cam-slide-name { font-size: 14px; font-weight: 700; color: var(--blue); background: none; border: none; font-family: inherit; outline: none; min-width: 0; flex: 1; }
-  .cam-specs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .cam-spec { display: flex; flex-direction: column; gap: 2px; }
-  .cam-spec label { font-size: 9px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
-  .cam-spec input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; padding: 4px 6px; color: #ddd; font-size: 11px; font-family: 'Courier New', monospace; outline: none; width: 100%; }
-  .cam-spec input:focus { border-color: var(--blue); }
+  .cam-specs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .cam-spec { display: flex; flex-direction: column; gap: 4px; }
+  .cam-spec label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .cam-spec input { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 10px; color: #eee; font-size: 14px; font-weight: 600; font-family: 'Courier New', monospace; outline: none; width: 100%; }
+  .cam-spec input:focus { border-color: var(--blue); background: #252525; }
   /* YT 連結列 */
   .yt-link-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 8px 14px; }
   .yt-icon { color: #ff4444; font-size: 14px; flex-shrink: 0; }
@@ -237,10 +237,25 @@
   .yt-input::placeholder { color: #555; }
   .yt-go-btn { flex-shrink: 0; padding: 4px 12px; border-radius: var(--radius-sm); background: #ff4444; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
   .yt-go-btn:hover { background: #cc2222; }
-  /* 製作細節 */
+  /* 節目流程規格列 — 直列 */
+  .prod-spec-list { display: flex; flex-direction: column; gap: 10px; background: #2a2a2a; border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; }
+  .prod-spec-row { display: flex; align-items: center; gap: 12px; }
+  .prod-spec-label { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; width: 64px; flex-shrink: 0; }
+  .prod-spec-value { font-size: 14px; font-weight: 600; color: #ccc; }
+  .prod-format-btns { display: flex; gap: 6px; }
+  .prod-fmt-btn { padding: 4px 14px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.15); background: none; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .prod-fmt-btn:hover { border-color: rgba(255,255,255,0.3); color: #aaa; }
+  .prod-fmt-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .prod-audio-input { flex: 1; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 5px 10px; color: #ccc; font-size: 13px; font-family: inherit; outline: none; }
+  .prod-audio-input:focus { border-color: var(--accent); }
+  .prod-audio-input::placeholder { color: #555; }
   .production-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .production-block { display: flex; flex-direction: column; }
   .production-area { flex: 1; min-height: 300px; resize: vertical; }
+  @media (max-width: 900px) {
+    .production-wrap { grid-template-columns: 1fr; }
+    .production-area { min-height: 200px; }
+  }
   @media (max-width: 600px) {
     .production-wrap { grid-template-columns: 1fr; }
     .production-area { min-height: 180px; }
@@ -629,7 +644,7 @@ function renderMain() {
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
           <span style="color:#ff4444;font-size:13px;flex-shrink:0">▶</span>
-          <input class="scene-note-input" placeholder="場景說明備註 / YT 連結…" value="${esc(p.sceneNote)}"
+          <input class="scene-note-input" placeholder="YT 連結" value="${esc(p.sceneNote)}"
             oninput="getP(${p.id}).sceneNote=this.value;debouncedSave(getP(${p.id}))">
           ${p.sceneNote && p.sceneNote.startsWith('http') ? `<a href="${esc(p.sceneNote)}" target="_blank" rel="noopener" style="flex-shrink:0;padding:3px 10px;border-radius:4px;background:#ff4444;color:#fff;font-size:11px;font-weight:600;text-decoration:none;white-space:nowrap">開啟 YT ↗</a>` : ''}
         </div>
@@ -956,20 +971,53 @@ function renderOnair(p) {
 }
 
 function renderProduction(p) {
+  const camCount = (p.cameras || []).length;
+  const camLabel = camCount >= 4 ? '四機' : camCount === 3 ? '三機' : camCount === 2 ? '雙機' : camCount === 1 ? '單機' : '—';
+  const lightsOn = (p.lights || []).filter(l => l.on !== false).length;
+  const fmt = p.recordFormat || '';
+
   return `<div class="panel active">
     <div class="production-wrap">
       <div class="production-block">
         <div class="sec-label">規格</div>
-        <textarea class="note-area production-area" rows="8" placeholder="解析度、格式、幀率、音訊規格…&#10;例：4K 29.97P / XAVC-L / 音訊 48kHz"
+        <div class="prod-spec-list">
+          <div class="prod-spec-row">
+            <span class="prod-spec-label">錄製格式</span>
+            <div class="prod-format-btns">
+              <button class="prod-fmt-btn${fmt==='4K'?' active':''}" onclick="setProdFormat(${p.id},'4K')">4K</button>
+              <button class="prod-fmt-btn${fmt==='1080P'?' active':''}" onclick="setProdFormat(${p.id},'1080P')">1080P</button>
+            </div>
+          </div>
+          <div class="prod-spec-row">
+            <span class="prod-spec-label">出機</span>
+            <span class="prod-spec-value">${camLabel}</span>
+          </div>
+          <div class="prod-spec-row">
+            <span class="prod-spec-label">燈光</span>
+            <span class="prod-spec-value">${lightsOn} 組</span>
+          </div>
+          <div class="prod-spec-row">
+            <span class="prod-spec-label">收音</span>
+            <input class="prod-audio-input" value="${esc(p.audioNote||'')}" placeholder="例：mini mic × 2"
+              oninput="getP(${p.id}).audioNote=this.value;debouncedSave(getP(${p.id}))">
+          </div>
+        </div>
+        <textarea class="note-area production-area" rows="5" placeholder="幀率、音訊規格、編碼…&#10;例：29.97P / XAVC-L / 48kHz"
           oninput="getP(${p.id}).specNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.specNote||'')}</textarea>
       </div>
       <div class="production-block">
         <div class="sec-label">流程</div>
-        <textarea class="note-area production-area" rows="8" placeholder="拍攝流程、注意事項、SOP…&#10;例：1. 暖機15分鐘 2. 白平衡確認 3. 對焦測試"
+        <textarea class="note-area production-area" rows="10" placeholder="拍攝流程、注意事項、SOP…&#10;例：1. 暖機15分鐘 2. 白平衡確認 3. 對焦測試"
           oninput="getP(${p.id}).flowNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.flowNote||'')}</textarea>
       </div>
     </div>
   </div>`;
+}
+
+function setProdFormat(id, fmt) {
+  const p = getP(id);
+  p.recordFormat = p.recordFormat === fmt ? '' : fmt; // 再點一次取消
+  renderMain(); debouncedSave(p);
 }
 
 // ── IMAGE COMPRESS ──
@@ -1359,6 +1407,7 @@ window.renderMain     = renderMain;
 window.renderNav      = renderNav;
 window.renderMobileNav = renderMobileNav;
 window.renderProduction = renderProduction;
+window.setProdFormat    = setProdFormat;
 window.render         = render;
 // activeTab / activeId: 讓 inline handler 讀寫時透過函式操作 module 變數
 window.setActiveTab   = v => { activeTab = v; };
