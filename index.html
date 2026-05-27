@@ -144,22 +144,25 @@
   }
 
   /* ── LIGHT TAGS ── */
-  .light-tag { position: absolute; border-radius: 20px; padding: 4px 9px; display: flex; align-items: center; gap: 5px; cursor: move; user-select: none; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: box-shadow 0.15s; }
+  .light-tag { position: absolute; border-radius: 20px; padding: 3px 7px; display: flex; align-items: center; gap: 4px; cursor: move; user-select: none; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: box-shadow 0.15s; }
   .light-tag:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.6); }
   /* A燈 — 黃 */
   .light-tag.c-yellow { background: rgba(26,22,0,0.82); border: 1.5px solid #e8c40c; }
   .light-tag.c-yellow .tag-val { color: #e8c40c; }
+  .light-tag.c-yellow .tag-key { color: #e8c40c; }
   /* B燈 — 藍 */
   .light-tag.c-blue { background: rgba(0,10,30,0.82); border: 1.5px solid #4a9fe8; }
   .light-tag.c-blue .tag-val { color: #4a9fe8; }
+  .light-tag.c-blue .tag-key { color: #4a9fe8; }
   /* C燈 — 綠 */
   .light-tag.c-green { background: rgba(0,20,8,0.82); border: 1.5px solid #3ecf6a; }
   .light-tag.c-green .tag-val { color: #3ecf6a; }
+  .light-tag.c-green .tag-key { color: #3ecf6a; }
+  .light-tag .tag-key { font-size: 10px; font-weight: 800; opacity: 0.85; white-space: nowrap; }
   .light-tag .tag-dot { display: none; }
-  .light-tag .tag-values { display: flex; gap: 6px; align-items: center; }
-  .light-tag .tag-val { font-size: 11px; font-weight: 700; cursor: pointer; padding: 1px 3px; border-radius: 3px; white-space: nowrap; }
-  .light-tag .tag-val:hover { opacity: 0.8; }
-  .light-tag .tag-val[contenteditable=true] { min-width: 28px; }
+  .light-tag .tag-sep { display: none; }
+  .light-tag .tag-values { display: flex; gap: 3px; align-items: center; }
+  .light-tag .tag-val { font-size: 11px; font-weight: 700; padding: 0 2px; border-radius: 3px; white-space: nowrap; pointer-events: none; }
   .light-tag .tag-sep { display: none; }
 
   /* ── LIGHT CARDS ── */
@@ -357,8 +360,8 @@
 <div class="app">
   <div class="sidebar">
     <div class="sidebar-header">
-      <h1>DT STUDIO</h1>
-      <p>Studio Playbook</p>
+      <h1 style="color:var(--accent);font-size:15px;font-weight:800;letter-spacing:0.12em">DIGITIMES</h1>
+      <p style="font-size:10px;color:#888;letter-spacing:0.1em;text-transform:uppercase;margin-top:1px">Studio Playbook</p>
       <div class="sync-status">
         <span class="sync-dot" id="syncDot"></span>
         <span id="syncText">連線中…</span>
@@ -699,35 +702,23 @@ function renderScene(p) {
       posStyle = `left:${defaultLeft}%;top:${defaultTop}%`;
     }
     const isRGB = l.isRGB || false;
+    const keyName = (FIXED_LIGHTS_DEF[i]||{}).key || '';
     if (isRGB) {
       return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
         onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
-        <span class="tag-dot"></span>
+        <span class="tag-key">${esc(keyName)}</span>
         <span class="tag-values">
-          <span class="tag-val" contenteditable="true"
-            oninput="getP(${p.id}).lights[${i}].intensity=this.innerText.trim();debouncedSave(getP(${p.id}))"
-            onclick="event.stopPropagation()">${esc(l.intensity||'H—')}</span>
-          <span class="tag-sep">/</span>
-          <span class="tag-val" contenteditable="true"
-            oninput="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim();debouncedSave(getP(${p.id}))"
-            onclick="event.stopPropagation()">${esc(l.kelvin||'S—')}</span>
-          <span class="tag-sep">/</span>
-          <span class="tag-val" contenteditable="true"
-            oninput="getP(${p.id}).lights[${i}].intensity2=this.innerText.trim();debouncedSave(getP(${p.id}))"
-            onclick="event.stopPropagation()">${esc(l.intensity2||'i—')}</span>
+          <span class="tag-val">${esc(l.intensity||'H—')}</span>
+          <span class="tag-val">${esc(l.kelvin||'S—')}</span>
+          <span class="tag-val">${esc(l.intensity2||'i—')}</span>
         </span></div>`;
     }
     return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
       onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
-      <span class="tag-dot"></span>
+      <span class="tag-key">${esc(keyName)}</span>
       <span class="tag-values">
-        <span class="tag-val" contenteditable="true"
-          oninput="getP(${p.id}).lights[${i}].intensity=this.innerText.trim();debouncedSave(getP(${p.id}))"
-          onclick="event.stopPropagation()">${esc(l.intensity||'—')}</span>
-        <span class="tag-sep">/</span>
-        <span class="tag-val" contenteditable="true"
-          oninput="getP(${p.id}).lights[${i}].kelvin=this.innerText.trim();debouncedSave(getP(${p.id}))"
-          onclick="event.stopPropagation()">${esc(l.kelvin||'—')}</span>
+        <span class="tag-val">${esc(l.intensity||'—')}</span>
+        <span class="tag-val">${esc(l.kelvin||'—')}</span>
       </span></div>`;
   }).join('');
 
@@ -961,12 +952,8 @@ function renderOnair(p) {
         <span>🎬</span><span>新增畫面</span>
       </div>
     </div>
-    <div class="yt-link-row">
-      <span class="yt-icon">▶</span>
-      <input class="yt-input" type="url" placeholder="貼上 YouTube 網址…" value="${esc(p.onairNote||'')}"
-        oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">
-      ${p.onairNote ? `<a class="yt-go-btn" href="${esc(p.onairNote)}" target="_blank" rel="noopener">開啟 YT ↗</a>` : ''}
-    </div>
+    <textarea class="note-area" rows="3" placeholder="上線備註、注意事項…"
+      oninput="getP(${p.id}).onairNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.onairNote||'')}</textarea>
   </div>`;
 }
 
@@ -1002,7 +989,7 @@ function renderProduction(p) {
               oninput="getP(${p.id}).audioNote=this.value;debouncedSave(getP(${p.id}))">
           </div>
         </div>
-        <textarea class="note-area production-area" rows="5" placeholder="幀率、音訊規格、編碼…&#10;例：29.97P / XAVC-L / 48kHz"
+        <textarea class="note-area production-area" rows="3" placeholder="幀率、音訊規格、編碼…&#10;例：29.97P / XAVC-L / 48kHz"
           oninput="getP(${p.id}).specNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.specNote||'')}</textarea>
       </div>
       <div class="production-block">
@@ -1256,9 +1243,9 @@ function updateTag(pid,idx){
   const el=document.getElementById(`ltag-${idx}`);if(!el)return;
   const l=getP(pid).lights[idx];
   const vals=el.querySelectorAll('.tag-val');
-  if(vals[0]&&document.activeElement!==vals[0])vals[0].innerText=l.intensity||'—';
-  if(vals[1]&&document.activeElement!==vals[1])vals[1].innerText=l.kelvin||'—';
-  if(vals[2]&&document.activeElement!==vals[2])vals[2].innerText=l.intensity2||'—';
+  if(vals[0]) vals[0].textContent=l.intensity||'—';
+  if(vals[1]) vals[1].textContent=l.kelvin||'—';
+  if(vals[2]) vals[2].textContent=l.intensity2||'—';
 }
 
 // ── DRAG TAGS ──
