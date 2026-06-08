@@ -226,12 +226,15 @@
   .cam-slide-img .img-change-btn { position: absolute; top: 8px; right: 8px; display: none; }
   .cam-slide-img:hover .img-change-btn { display: block; }
   .cam-slide-info { padding: 12px 14px; }
-  .cam-slide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; }
-  .cam-slide-name { font-size: 14px; font-weight: 700; color: var(--blue); background: none; border: none; font-family: inherit; outline: none; min-width: 0; flex: 1; }
-  .cam-specs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-  .cam-spec { display: flex; flex-direction: column; gap: 4px; }
+  .cam-slide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+  .cam-slide-name { font-size: 16px; font-weight: 700; color: var(--blue); background: none; border: none; font-family: inherit; outline: none; min-width: 60px; flex-shrink: 0; }
+  .cam-meta-input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; padding: 4px 8px; color: #bbb; font-size: 12px; font-family: inherit; outline: none; min-width: 0; }
+  .cam-meta-input:focus { border-color: var(--blue); }
+  .cam-meta-model { background: #1e2a3a; border-color: rgba(74,159,232,0.3); color: #4a9fe8; font-weight: 600; }
+  .cam-specs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .cam-spec { display: flex; flex-direction: column; gap: 5px; }
   .cam-spec label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-  .cam-spec input { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px 10px; color: #eee; font-size: 14px; font-weight: 600; font-family: 'Courier New', monospace; outline: none; width: 100%; }
+  .cam-spec input { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 10px 12px; color: #eee; font-size: 16px; font-weight: 600; font-family: 'Courier New', monospace; outline: none; width: 100%; }
   .cam-spec input:focus { border-color: var(--blue); background: #252525; }
   /* YT 連結列 */
   .yt-link-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 8px 14px; }
@@ -685,7 +688,7 @@ function renderScene(p) {
   ] : [
     {key:'A1',group:'yellow'},{key:'A2',group:'yellow'},
     {key:'B1',group:'blue'},{key:'B2',group:'blue'},{key:'B3',group:'blue'},
-    {key:'C1',group:'green'},{key:'C2',group:'green'},{key:'C3',group:'green'},
+    {key:'C1',group:'green'},{key:'C2',group:'green'},{key:'C3',group:'green'},{key:'C4',group:'green'},
   ];
   const tags = p.lights.map((l,i)=>{
     if (l.on === false) return ''; // 關閉的燈不顯示標籤
@@ -750,6 +753,7 @@ function renderScene(p) {
     {key:'C1', label:'C1 (200x)', group:'green'},
     {key:'C2', label:'C2 (200x)', group:'green'},
     {key:'C3', label:'C3 (200x)', group:'green'},
+    {key:'C4', label:'C4 (200x)', group:'green'},
   ];
   const lightCount = FIXED_LIGHTS.length;
   // 確保 p.lights 有正確數量並對應 key
@@ -766,7 +770,7 @@ function renderScene(p) {
   // 只保留對應數量
   p.lights = p.lights.slice(0, lightCount);
 
-  const FIXTURES = ['圓','方','球','傘','標'];
+  const FIXTURES = ['大圓','小圓','球','方','傘','標','SP'];
   const lightCards = p.lights.map((l, i) => {
     const def = FIXED_LIGHTS[i];
     const isOn = l.on !== false;
@@ -774,7 +778,7 @@ function renderScene(p) {
     const group = def.group;
     const colorClass = `g-${group}`;
     const tagColor = group === 'yellow' ? 'c-yellow' : group === 'blue' ? 'c-blue' : 'c-green';
-    const showHoneycomb = l.fixture === '圓' || l.fixture === '方';
+    const showHoneycomb = l.fixture === '大圓' || l.fixture === '小圓' || l.fixture === '方';
 
     const fixtureButtons = FIXTURES.map(f =>
       `<button class="fixture-btn${l.fixture===f?' active':''}"
@@ -872,21 +876,26 @@ function renderCamera(p) {
         <div class="cam-slide-header">
           <input class="cam-slide-name" value="${esc(c.name)}"
             oninput="getP(${p.id}).cameras[${i}].name=this.value;debouncedSave(getP(${p.id}))">
+          <input class="cam-meta-input" value="${esc(c.lens||'')}" placeholder="鏡頭"
+            oninput="getP(${p.id}).cameras[${i}].lens=this.value;debouncedSave(getP(${p.id}))">
+          <input class="cam-meta-input cam-meta-model" value="${esc(c.note||'')}" placeholder="機型"
+            oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))">
           <button class="slide-del" onclick="removeCam(${p.id},${i})">✕</button>
         </div>
-        <div class="cam-specs" style="grid-template-columns:repeat(4,1fr) 1.3fr 1.3fr">
-          <div class="cam-spec"><label>焦段</label><input value="${esc(c.focal||'')}" placeholder="24mm"
-            oninput="getP(${p.id}).cameras[${i}].focal=this.value;debouncedSave(getP(${p.id}))"></div>
-          <div class="cam-spec"><label>光圈</label><input value="${esc(c.aperture||'')}" placeholder="F2.8"
-            oninput="getP(${p.id}).cameras[${i}].aperture=this.value;debouncedSave(getP(${p.id}))"></div>
+        <div class="cam-specs">
+          <div class="cam-spec"><label>焦段</label><input value="${esc(c.focal||'')}" placeholder="52"
+            oninput="getP(${p.id}).cameras[${i}].focal=this.value;debouncedSave(getP(${p.id}))"
+            onchange="this.value=fmtMm(this.value);getP(${p.id}).cameras[${i}].focal=this.value;debouncedSave(getP(${p.id}))"></div>
+          <div class="cam-spec"><label>光圈</label><input value="${esc(c.aperture||'')}" placeholder="F4"
+            oninput="getP(${p.id}).cameras[${i}].aperture=this.value;debouncedSave(getP(${p.id}))"
+            onchange="this.value=fmtF(this.value);getP(${p.id}).cameras[${i}].aperture=this.value;debouncedSave(getP(${p.id}))"></div>
           <div class="cam-spec"><label>快門</label><input value="${esc(c.shutter||'')}" placeholder="1/60"
             oninput="getP(${p.id}).cameras[${i}].shutter=this.value;debouncedSave(getP(${p.id}))"></div>
-          <div class="cam-spec"><label>ISO</label><input value="${esc(c.iso||'')}" placeholder="0db"
+          <div class="cam-spec"><label>ISO</label><input value="${esc(c.iso||'')}" placeholder="800"
             oninput="getP(${p.id}).cameras[${i}].iso=this.value;debouncedSave(getP(${p.id}))"></div>
-          <div class="cam-spec"><label>色溫</label><input value="${esc(c.kelvin||'')}" placeholder="4200K"
-            oninput="getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"></div>
-          <div class="cam-spec"><label>機型</label><input value="${esc(c.note||'')}" placeholder="SONY Z190"
-            oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
+          <div class="cam-spec"><label>色溫</label><input value="${esc(c.kelvin||'')}" placeholder="4200"
+            oninput="getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"
+            onchange="this.value=fmtK(this.value);getP(${p.id}).cameras[${i}].kelvin=this.value;debouncedSave(getP(${p.id}))"></div>
         </div>
       </div>
     </div>`).join('');
@@ -1140,6 +1149,18 @@ async function handleCamImg(id, idx, input) {
   }
 }
 
+function fmtMm(v) {
+  v = v.trim(); if (!v) return v;
+  return /^\d+(\.\d+)?$/.test(v) ? v + 'mm' : v;
+}
+function fmtF(v) {
+  v = v.trim(); if (!v) return v;
+  // 純數字 → F4；已有 F/f 開頭 → 保留大寫
+  if (/^\d+(\.\d+)?$/.test(v)) return 'F' + v;
+  if (/^[fF]\d/.test(v)) return 'F' + v.slice(1);
+  return v;
+}
+
 // ── LIGHT VALUE FORMATTERS ──
 // 輸入純數字自動補單位，已有單位則保留原樣
 function fmtPct(v) {
@@ -1364,6 +1385,7 @@ window.setLightColor  = ()=>{};  // 已不使用
 window.setLightRGB    = setLightRGB;
 window.fmtPct = fmtPct; window.fmtK = fmtK;
 window.fmtH = fmtH; window.fmtS = fmtS; window.fmtI = fmtI;
+window.fmtMm = fmtMm; window.fmtF = fmtF;
 window.handleImg      = handleImg;
 window.addSceneImgs    = addSceneImgs;
 window.removeSceneImg  = removeSceneImg;
