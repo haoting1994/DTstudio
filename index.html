@@ -179,8 +179,6 @@
   .light-card-top { display: flex; align-items: center; margin-bottom: 10px; }
   .lc-name-row { display: flex; align-items: center; gap: 8px; width: 100%; }
   .lc-name-row .light-card-name { flex: 1; min-width: 0; }
-  .light-card-name-input { font-size: 13px; font-weight: 700; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.25); outline: none; color: #eee; font-family: inherit; flex: 1; min-width: 0; padding: 0 0 1px; }
-  .light-card-name-input::placeholder { color: #555; font-weight: 400; }
   .lc-name-row .rgb-toggle { margin-left: auto; flex-shrink: 0; }
   /* 電源按鈕 */
   .power-btn { background: none; border: none; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px; flex-shrink: 0; filter: grayscale(1) brightness(0.4); transition: filter 0.2s; }
@@ -686,11 +684,11 @@ function renderScene(p) {
   const colorClass = c => ({'orange':'c-orange','yellow':'c-yellow','blue':'c-blue','white':'c-white'}[c]||'c-orange');
 
   const FIXED_LIGHTS_DEF = isGreenStudio ? [
-    {key:'G1',group:'green',fixedLabel:true},{key:'G2',group:'green',fixedLabel:true},{key:'G3',group:'green',fixedLabel:true},{key:'G4',group:'green',fixedLabel:false},
+    {key:'G1',group:'green'},{key:'G2',group:'green'},{key:'G3',group:'green'},
   ] : [
-    {key:'A1',group:'yellow',fixedLabel:true},{key:'A2',group:'yellow',fixedLabel:true},
-    {key:'B1',group:'blue',fixedLabel:true},{key:'B2',group:'blue',fixedLabel:true},{key:'B3',group:'blue',fixedLabel:true},
-    {key:'C1',group:'green',fixedLabel:true},{key:'C2',group:'green',fixedLabel:true},{key:'C3',group:'green',fixedLabel:true},{key:'C4',group:'green',fixedLabel:true},
+    {key:'A1',group:'yellow'},{key:'A2',group:'yellow'},
+    {key:'B1',group:'blue'},{key:'B2',group:'blue'},{key:'B3',group:'blue'},
+    {key:'C1',group:'green'},{key:'C2',group:'green'},{key:'C3',group:'green'},{key:'C4',group:'green'},
   ];
   const tags = p.lights.map((l,i)=>{
     if (l.on === false) return ''; // 關閉的燈不顯示標籤
@@ -708,7 +706,7 @@ function renderScene(p) {
       posStyle = `left:${defaultLeft}%;top:${defaultTop}%`;
     }
     const isRGB = l.isRGB || false;
-    const keyName = def.fixedLabel ? ((FIXED_LIGHTS_DEF[i]||{}).key || '') : (l.customName || '自訂');
+    const keyName = (FIXED_LIGHTS_DEF[i]||{}).key || '';
     if (isRGB) {
       return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
         onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
@@ -742,20 +740,19 @@ function renderScene(p) {
 
   // 依棚別選擇燈光配置
   const FIXED_LIGHTS = isGreenStudio ? [
-    {key:'G1', label:'G1 (200x)', group:'green', fixedLabel: true},
-    {key:'G2', label:'G2 (200x)', group:'green', fixedLabel: true},
-    {key:'G3', label:'G3 (200x)', group:'green', fixedLabel: true},
-    {key:'G4', label:'', group:'green', fixedLabel: false},
+    {key:'G1', label:'G1 (200x)', group:'green'},
+    {key:'G2', label:'G2 (200x)', group:'green'},
+    {key:'G3', label:'G3 (200x)', group:'green'},
   ] : [
-    {key:'A1', label:'A1 (360c)', group:'yellow', fixedLabel: true},
-    {key:'A2', label:'A2 (360c)', group:'yellow', fixedLabel: true},
-    {key:'B1', label:'B1 (300c)', group:'blue', fixedLabel: true},
-    {key:'B2', label:'B2 (300c)', group:'blue', fixedLabel: true},
-    {key:'B3', label:'B3 (300c)', group:'blue', fixedLabel: true},
-    {key:'C1', label:'C1 (200x)', group:'green', fixedLabel: true},
-    {key:'C2', label:'C2 (200x)', group:'green', fixedLabel: true},
-    {key:'C3', label:'C3 (200x)', group:'green', fixedLabel: true},
-    {key:'C4', label:'C4 (200x)', group:'green', fixedLabel: true},
+    {key:'A1', label:'A1 (360c)', group:'yellow'},
+    {key:'A2', label:'A2 (360c)', group:'yellow'},
+    {key:'B1', label:'B1 (300c)', group:'blue'},
+    {key:'B2', label:'B2 (300c)', group:'blue'},
+    {key:'B3', label:'B3 (300c)', group:'blue'},
+    {key:'C1', label:'C1 (200x)', group:'green'},
+    {key:'C2', label:'C2 (200x)', group:'green'},
+    {key:'C3', label:'C3 (200x)', group:'green'},
+    {key:'C4', label:'C4 (200x)', group:'green'},
   ];
   const lightCount = FIXED_LIGHTS.length;
   // 確保 p.lights 有正確數量並對應 key
@@ -791,11 +788,7 @@ function renderScene(p) {
       <div class="light-card-top">
         <div class="lc-name-row">
           <button class="power-btn${isOn?' on':''}" onclick="togglePower(${p.id},${i})" title="${isOn?'關閉':'開啟'}燈光">⏻</button>
-          ${def.fixedLabel
-            ? `<span class="light-card-name">${esc(def.label)}</span>`
-            : `<input class="light-card-name-input" value="${esc(l.customName||'')}" placeholder="自訂名稱"
-                oninput="getP(${p.id}).lights[${i}].customName=this.value;debouncedSave(getP(${p.id}))">`
-          }
+          <span class="light-card-name">${esc(def.label)}</span>
           <div class="rgb-toggle${isRGB?' on':''}" onclick="setLightRGB(${p.id},${i},${!isRGB})" title="RGB 模式"
             style="${group==='green'?'display:none':''}">
             <span class="rgb-dot"></span>
