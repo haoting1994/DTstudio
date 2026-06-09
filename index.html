@@ -790,7 +790,8 @@ function renderScene(p) {
         <div class="lc-name-row">
           <button class="power-btn${isOn?' on':''}" onclick="togglePower(${p.id},${i})" title="${isOn?'關閉':'開啟'}燈光">⏻</button>
           <span class="light-card-name">${esc(def.label)}</span>
-          <div class="rgb-toggle${isRGB?' on':''}" onclick="setLightRGB(${p.id},${i},${!isRGB})" title="RGB 模式">
+          <div class="rgb-toggle${isRGB?' on':''}" onclick="setLightRGB(${p.id},${i},${!isRGB})" title="RGB 模式"
+            style="${group==='green'?'display:none':''}">
             <span class="rgb-dot"></span>
             <span class="rgb-label">RGB</span>
           </div>
@@ -876,10 +877,10 @@ function renderCamera(p) {
         <div class="cam-slide-header">
           <input class="cam-slide-name" value="${esc(c.name)}"
             oninput="getP(${p.id}).cameras[${i}].name=this.value;debouncedSave(getP(${p.id}))">
-          <input class="cam-meta-input" value="${esc(c.lens||'')}" placeholder="鏡頭"
-            oninput="getP(${p.id}).cameras[${i}].lens=this.value;debouncedSave(getP(${p.id}))">
           <input class="cam-meta-input cam-meta-model" value="${esc(c.note||'')}" placeholder="機型"
             oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))">
+          <input class="cam-meta-input" value="${esc(c.lens||'')}" placeholder="鏡頭"
+            oninput="getP(${p.id}).cameras[${i}].lens=this.value;debouncedSave(getP(${p.id}))">
           <button class="slide-del" onclick="removeCam(${p.id},${i})">✕</button>
         </div>
         <div class="cam-specs">
