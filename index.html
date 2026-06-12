@@ -209,11 +209,20 @@
 
   /* 滑桿 */
   .lf-slider { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .lf-slider label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: baseline; }
+  .lf-slider label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
   .lf-slider label span { font-weight: 800; color: #eee; font-size: 15px; letter-spacing: 0; }
-  .slider-track { position: relative; height: 36px; display: flex; align-items: center; }
-  .slider-track input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; background: transparent; position: relative; z-index: 1; }
-  .slider-track input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #eee; border: 2px solid rgba(0,0,0,0.25); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+  /* 可編輯數值輸入 */
+  .slider-val-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #eee; font-size: 15px; font-weight: 800; font-family: inherit; outline: none; width: 40px; text-align: right; padding: 1px 3px; -moz-appearance: textfield; }
+  .slider-val-input::-webkit-inner-spin-button, .slider-val-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .slider-val-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.12); }
+  .slider-val-input:disabled { opacity: 0.35; }
+  .kelvin-val { width: 52px; }
+  .slider-val-wrap { display: inline-flex; align-items: baseline; gap: 2px; }
+  .slider-val-unit { font-size: 12px; font-weight: 700; color: #aaa; }
+  .slider-track { position: relative; height: 32px; display: flex; align-items: center; }
+  .slider-track input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 3px; outline: none; cursor: pointer; background: transparent; position: relative; z-index: 1; }
+  .slider-track input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #eee; border: 2px solid rgba(0,0,0,0.25); cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+  .slider-track input[type=range]::-webkit-slider-thumb:hover { width: 22px; height: 22px; }
   .slider-track input[type=range]:disabled { opacity: 0.35; cursor: not-allowed; }
   .slider-track input[type=range]:disabled::-webkit-slider-thumb { cursor: not-allowed; }
   /* 強度滑桿 — 黑到白 */
@@ -221,7 +230,7 @@
   /* 色溫滑桿 — 橘黃到白到藍 */
   .kelvin-slider input[type=range] { background: linear-gradient(to right, #ff8c00, #ffcc44, #fff5e0, #ffffff, #cce4ff, #88c0ff); }
   /* 備註 input — 無 label */
-  .note-plain { width: 100%; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 10px; color: #888; font-size: 12px; font-family: inherit; outline: none; margin-top: 2px; }
+  .note-plain { width: 100%; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 10px; color: #888; font-size: 12px; font-family: inherit; outline: none; margin-top: 10px; }
   .note-plain:focus { border-color: rgba(255,255,255,0.25); }
   .note-plain::placeholder { color: #444; }
 
@@ -799,14 +808,12 @@ function renderScene(p) {
     const group = def.group;
     const colorClass = `g-${group}`;
     if (l.locked === undefined) l.locked = false;
-    // 強度：從 intensityRaw 優先，再從字串解析，預設 50
-    const intVal = l.intensityRaw !== undefined
-      ? Math.round(Math.max(0, Math.min(100, Number(l.intensityRaw))))
-      : Math.round(Math.max(0, Math.min(100, parseFloat((l.intensity||'50').replace(/[^0-9.]/g,'')) || 50)));
-    // 色溫：從 kelvinRaw 優先，再從字串解析，預設 4200
-    const kelVal = l.kelvinRaw !== undefined
-      ? Math.round(Math.max(2500, Math.min(6500, Number(l.kelvinRaw))))
-      : Math.round(Math.max(2500, Math.min(6500, parseFloat((l.kelvin||'4200').replace(/[^0-9.]/g,'')) || 4200)));
+    // 強度：清除所有非數字字符後解析
+    const _intStr = String(l.intensityRaw ?? l.intensity ?? '50').replace(/[^0-9]/g, '');
+    const intVal = Math.min(100, Math.max(0, parseInt(_intStr) || 0));
+    // 色溫：清除所有非數字字符後解析
+    const _kelStr = String(l.kelvinRaw ?? l.kelvin ?? '4200').replace(/[^0-9]/g, '');
+    const kelVal = Math.min(6500, Math.max(2500, parseInt(_kelStr) || 4200));
     const tagColor = group === 'yellow' ? 'c-yellow' : group === 'blue' ? 'c-blue' : 'c-green';
     const showHoneycomb = l.fixture === '大圓' || l.fixture === '小圓' || l.fixture === '方';
 
@@ -844,14 +851,26 @@ function renderScene(p) {
       </div>` : `
       <div class="light-fields">
         <div class="lf-slider intensity-slider">
-          <label>強度 <span>${intVal}%</span></label>
+          <label>強度
+            <span class="slider-val-wrap">
+              <input class="slider-val-input" type="number" min="0" max="100" value="${intVal}" ${l.locked?'disabled':''}
+                onchange="setLightIntensity(${p.id},${i},Math.max(0,Math.min(100,this.value||0)));this.value=getP(${p.id}).lights[${i}].intensityRaw">
+              <span class="slider-val-unit">%</span>
+            </span>
+          </label>
           <div class="slider-track">
             <input type="range" min="0" max="100" step="1" value="${intVal}" ${l.locked?'disabled':''}
               oninput="setLightIntensity(${p.id},${i},this.value)">
           </div>
         </div>
         <div class="lf-slider kelvin-slider">
-          <label>色溫 <span>${kelVal}K</span></label>
+          <label>色溫
+            <span class="slider-val-wrap">
+              <input class="slider-val-input kelvin-val" type="number" min="2500" max="6500" step="100" value="${kelVal}" ${l.locked?'disabled':''}
+                onchange="setLightKelvin(${p.id},${i},Math.max(2500,Math.min(6500,this.value||4200)));this.value=getP(${p.id}).lights[${i}].kelvinRaw">
+              <span class="slider-val-unit">K</span>
+            </span>
+          </label>
           <div class="slider-track">
             <input type="range" min="2500" max="6500" step="100" value="${kelVal}" ${l.locked?'disabled':''}
               oninput="setLightKelvin(${p.id},${i},this.value)">
@@ -1281,26 +1300,31 @@ async function dropOnairNew(event, id) {
 }
 function setLightIntensity(id, idx, val) {
   const p = getP(id); const l = p.lights[idx];
-  const num = Math.round(Number(val));
+  const num = Math.round(Math.max(0, Math.min(100, Number(val))));
   l.intensityRaw = num;
   l.intensity = num + '%';
   updateTag(id, idx); debouncedSave(p);
+  // 同步同一張卡的 slider 和 number input
   const cards = document.querySelectorAll('.light-card');
   if (cards[idx]) {
-    const span = cards[idx].querySelector('.intensity-slider label span');
-    if (span) span.textContent = num + '%';
+    const range = cards[idx].querySelector('.intensity-slider input[type=range]');
+    const numInput = cards[idx].querySelector('.intensity-slider .slider-val-input');
+    if (range) range.value = num;
+    if (numInput) numInput.value = num;
   }
 }
 function setLightKelvin(id, idx, val) {
   const p = getP(id); const l = p.lights[idx];
-  const num = Math.round(Number(val) / 100) * 100;
+  const num = Math.round(Math.max(2500, Math.min(6500, Number(val))));
   l.kelvinRaw = num;
   l.kelvin = num + 'K';
   updateTag(id, idx); debouncedSave(p);
   const cards = document.querySelectorAll('.light-card');
   if (cards[idx]) {
-    const span = cards[idx].querySelector('.kelvin-slider label span');
-    if (span) span.textContent = num + 'K';
+    const range = cards[idx].querySelector('.kelvin-slider input[type=range]');
+    const numInput = cards[idx].querySelector('.kelvin-slider .slider-val-input');
+    if (range) range.value = num;
+    if (numInput) numInput.value = num;
   }
 }
 function toggleLock(id, idx) {
