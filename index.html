@@ -799,10 +799,14 @@ function renderScene(p) {
     const group = def.group;
     const colorClass = `g-${group}`;
     if (l.locked === undefined) l.locked = false;
-    // 強度：從儲存值取純數字，預設50
-    const intVal = parseInt((l.intensityRaw !== undefined ? l.intensityRaw : (l.intensity||'').replace('%','')) || 50) || 50;
-    // 色溫：從儲存值取純數字，預設4200
-    const kelVal = parseInt((l.kelvinRaw !== undefined ? l.kelvinRaw : (l.kelvin||'').replace('K','')) || 4200) || 4200;
+    // 強度：從 intensityRaw 優先，再從字串解析，預設 50
+    const intVal = l.intensityRaw !== undefined
+      ? Math.round(Math.max(0, Math.min(100, Number(l.intensityRaw))))
+      : Math.round(Math.max(0, Math.min(100, parseFloat((l.intensity||'50').replace(/[^0-9.]/g,'')) || 50)));
+    // 色溫：從 kelvinRaw 優先，再從字串解析，預設 4200
+    const kelVal = l.kelvinRaw !== undefined
+      ? Math.round(Math.max(2500, Math.min(6500, Number(l.kelvinRaw))))
+      : Math.round(Math.max(2500, Math.min(6500, parseFloat((l.kelvin||'4200').replace(/[^0-9.]/g,'')) || 4200)));
     const tagColor = group === 'yellow' ? 'c-yellow' : group === 'blue' ? 'c-blue' : 'c-green';
     const showHoneycomb = l.fixture === '大圓' || l.fixture === '小圓' || l.fixture === '方';
 
@@ -842,7 +846,7 @@ function renderScene(p) {
         <div class="lf-slider intensity-slider">
           <label>強度 <span>${intVal}%</span></label>
           <div class="slider-track">
-            <input type="range" min="0" max="100" value="${intVal}" ${l.locked?'disabled':''}
+            <input type="range" min="0" max="100" step="1" value="${intVal}" ${l.locked?'disabled':''}
               oninput="setLightIntensity(${p.id},${i},this.value)">
           </div>
         </div>
@@ -1277,24 +1281,26 @@ async function dropOnairNew(event, id) {
 }
 function setLightIntensity(id, idx, val) {
   const p = getP(id); const l = p.lights[idx];
-  l.intensityRaw = parseInt(val);
-  l.intensity = val + '%';
+  const num = Math.round(Number(val));
+  l.intensityRaw = num;
+  l.intensity = num + '%';
   updateTag(id, idx); debouncedSave(p);
   const cards = document.querySelectorAll('.light-card');
   if (cards[idx]) {
     const span = cards[idx].querySelector('.intensity-slider label span');
-    if (span) span.textContent = val + '%';
+    if (span) span.textContent = num + '%';
   }
 }
 function setLightKelvin(id, idx, val) {
   const p = getP(id); const l = p.lights[idx];
-  l.kelvinRaw = parseInt(val);
-  l.kelvin = val + 'K';
+  const num = Math.round(Number(val) / 100) * 100;
+  l.kelvinRaw = num;
+  l.kelvin = num + 'K';
   updateTag(id, idx); debouncedSave(p);
   const cards = document.querySelectorAll('.light-card');
   if (cards[idx]) {
     const span = cards[idx].querySelector('.kelvin-slider label span');
-    if (span) span.textContent = val + 'K';
+    if (span) span.textContent = num + 'K';
   }
 }
 function toggleLock(id, idx) {
