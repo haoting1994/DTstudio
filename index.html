@@ -208,18 +208,22 @@
   .lf.full { grid-column: 1 / -1; }
 
   /* 滑桿 */
-  .lf-slider { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .lf-slider label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
-  .lf-slider label span { font-weight: 700; color: #eee; font-size: 11px; }
-  .slider-track { position: relative; height: 28px; display: flex; align-items: center; }
-  .slider-track input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px; outline: none; cursor: pointer; background: transparent; position: relative; z-index: 1; }
-  .slider-track input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #eee; border: 2px solid rgba(0,0,0,0.3); cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-  .slider-track input[type=range]:disabled { opacity: 0.4; cursor: not-allowed; }
+  .lf-slider { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .lf-slider label { font-size: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: baseline; }
+  .lf-slider label span { font-weight: 800; color: #eee; font-size: 15px; letter-spacing: 0; }
+  .slider-track { position: relative; height: 36px; display: flex; align-items: center; }
+  .slider-track input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none; cursor: pointer; background: transparent; position: relative; z-index: 1; }
+  .slider-track input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #eee; border: 2px solid rgba(0,0,0,0.25); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
+  .slider-track input[type=range]:disabled { opacity: 0.35; cursor: not-allowed; }
   .slider-track input[type=range]:disabled::-webkit-slider-thumb { cursor: not-allowed; }
   /* 強度滑桿 — 黑到白 */
   .intensity-slider input[type=range] { background: linear-gradient(to right, #111, #fff); }
   /* 色溫滑桿 — 橘黃到白到藍 */
   .kelvin-slider input[type=range] { background: linear-gradient(to right, #ff8c00, #ffcc44, #fff5e0, #ffffff, #cce4ff, #88c0ff); }
+  /* 備註 input — 無 label */
+  .note-plain { width: 100%; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 6px 10px; color: #888; font-size: 12px; font-family: inherit; outline: none; margin-top: 2px; }
+  .note-plain:focus { border-color: rgba(255,255,255,0.25); }
+  .note-plain::placeholder { color: #444; }
 
   /* 鎖定按鈕 */
   .lock-btn { background: none; border: none; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; flex-shrink: 0; opacity: 0.35; transition: opacity 0.15s; }
@@ -833,8 +837,6 @@ function renderScene(p) {
         <div class="lf"><label>I 亮度</label><input value="${esc(l.intensity2||'')}" placeholder="62"
           oninput="getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"
           onchange="this.value=fmtI(this.value);getP(${p.id}).lights[${i}].intensity2=this.value;updateTag(${p.id},${i});debouncedSave(getP(${p.id}))"></div>
-        <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
-          oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>` : `
       <div class="light-fields">
         <div class="lf-slider intensity-slider">
@@ -851,14 +853,14 @@ function renderScene(p) {
               oninput="setLightKelvin(${p.id},${i},this.value)">
           </div>
         </div>
-        <div class="lf full"><label>備註</label><input value="${esc(l.note||'')}" placeholder="選填"
-          oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))"></div>
       </div>`}
       <div class="fixture-row">${fixtureButtons}</div>
       ${showHoneycomb ? `<div class="honeycomb-row">
         <label><input type="checkbox" ${l.honeycomb?'checked':''}
           onchange="setHoneycomb(${p.id},${i},this.checked)"> 蜂巢</label>
       </div>` : ''}
+      <input class="note-plain" value="${esc(l.note||'')}" placeholder="備註…"
+        oninput="getP(${p.id}).lights[${i}].note=this.value;debouncedSave(getP(${p.id}))">
     </div>`;
   }).join('');
 
