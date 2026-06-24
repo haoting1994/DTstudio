@@ -1063,7 +1063,7 @@ function renderProduction(p) {
   const camLabel = camCount > 0 ? `${countWord}-${typeWord}` : '—';
   const lightsOn = (p.lights || []).filter(l => l.on !== false).length;
   const fmt = p.recordFormat || '';
-  const AUDIO_OPTS = ['mini mic','Zoom','L8','H5'];
+  const AUDIO_OPTS = ['mini mic','Zoom L8','IC錄音','DJI'];
   const audioSel = p.audioOpts || [];
   const teleOn = p.teleprompter || false;
 
