@@ -264,6 +264,8 @@
   .cam-slide-info { padding: 12px 14px; }
   .cam-slide-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
   .cam-slide-name { font-size: 16px; font-weight: 700; color: var(--blue); background: none; border: none; font-family: inherit; outline: none; min-width: 60px; flex-shrink: 0; }
+  .cam-meta-select { background: #1e2a3a; border: 1px solid rgba(74,159,232,0.3); border-radius: 5px; padding: 4px 8px; color: #4a9fe8; font-size: 12px; font-weight: 600; font-family: inherit; outline: none; cursor: pointer; min-width: 0; }
+  .cam-meta-select:focus { border-color: var(--blue); }
   .cam-meta-input { background: #2a2a2a; border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; padding: 4px 8px; color: #bbb; font-size: 12px; font-family: inherit; outline: none; min-width: 0; }
   .cam-meta-input:focus { border-color: var(--blue); }
   .cam-meta-model { background: #1e2a3a; border-color: rgba(74,159,232,0.3); color: #4a9fe8; font-weight: 600; }
@@ -851,7 +853,7 @@ function renderScene(p) {
           <button class="power-btn${isOn?' on':''}" onclick="togglePower(${p.id},${i})" title="${isOn?'關閉':'開啟'}燈光">⏻</button>
           <span class="light-card-name">${esc(def.label)}</span>
           <div class="rgb-toggle${isRGB?' on':''}" onclick="setLightRGB(${p.id},${i},${!isRGB})" title="RGB 模式"
-            style="${group==='green'?'display:none':''}">
+            style="${group==='green'||isDStudio?'display:none':''}">
             <span class="rgb-dot"></span>
             <span class="rgb-label">RGB</span>
           </div>
@@ -936,12 +938,11 @@ function renderScene(p) {
 }
 
 function renderCamera(p) {
-  // 確保預設三台攝影機
   const DEFAULT_CAMS = ['Full','Guest','Host'];
   if (!p.cameras || p.cameras.length === 0) {
-    p.cameras = DEFAULT_CAMS.map(name => ({name, note:'', aperture:'', shutter:'', iso:'', kelvin:'', img:null}));
+    p.cameras = DEFAULT_CAMS.map(name => ({name, note:'', lens:'', aperture:'', shutter:'', iso:'', kelvin:'', img:null}));
   }
-
+  const CAM_MODELS = ['SONY Z190','Canon R6','Sony A74'];
   const slides = p.cameras.map((c,i) => `
     <div class="cam-slide">
       <div class="cam-slide-img"
@@ -958,8 +959,10 @@ function renderCamera(p) {
         <div class="cam-slide-header">
           <input class="cam-slide-name" value="${esc(c.name)}"
             oninput="getP(${p.id}).cameras[${i}].name=this.value;debouncedSave(getP(${p.id}))">
-          <input class="cam-meta-input cam-meta-model" value="${esc(c.note||'')}" placeholder="機型"
-            oninput="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))">
+          <select class="cam-meta-select" onchange="getP(${p.id}).cameras[${i}].note=this.value;debouncedSave(getP(${p.id}))">
+            <option value="">機型</option>
+            ${CAM_MODELS.map(m=>`<option value="${m}" ${c.note===m?'selected':''}>${m}</option>`).join('')}
+          </select>
           <input class="cam-meta-input" value="${esc(c.lens||'')}" placeholder="鏡頭"
             oninput="getP(${p.id}).cameras[${i}].lens=this.value;debouncedSave(getP(${p.id}))">
           <button class="slide-del" onclick="removeCam(${p.id},${i})">✕</button>
@@ -1050,10 +1053,19 @@ function renderOnair(p) {
 }
 
 function renderProduction(p) {
-  const camCount = (p.cameras || []).length;
-  const camLabel = camCount >= 4 ? '四機' : camCount === 3 ? '三機' : camCount === 2 ? '雙機' : camCount === 1 ? '單機' : '—';
+  const cams = p.cameras || [];
+  const camCount = cams.length;
+  // 判斷攝影機種類：SONY Z190=攝影機，其他=單眼
+  const CAMCORDER = 'SONY Z190';
+  const allCamcorder = camCount > 0 && cams.every(c => c.note === CAMCORDER);
+  const countWord = camCount >= 4 ? '四機' : camCount === 3 ? '三機' : camCount === 2 ? '雙機' : camCount === 1 ? '單機' : '—';
+  const typeWord = allCamcorder ? '攝影機' : '單眼';
+  const camLabel = camCount > 0 ? `${countWord}-${typeWord}` : '—';
   const lightsOn = (p.lights || []).filter(l => l.on !== false).length;
   const fmt = p.recordFormat || '';
+  const AUDIO_OPTS = ['mini mic','Zoom','L8','H5'];
+  const audioSel = p.audioOpts || [];
+  const teleOn = p.teleprompter || false;
 
   return `<div class="panel active">
     <div class="production-wrap">
@@ -1077,8 +1089,10 @@ function renderProduction(p) {
           </div>
           <div class="prod-spec-row">
             <span class="prod-spec-label">收音</span>
-            <input class="prod-audio-input" value="${esc(p.audioNote||'')}" placeholder="例：mini mic × 2"
-              oninput="getP(${p.id}).audioNote=this.value;debouncedSave(getP(${p.id}))">
+            <div class="prod-format-btns" style="flex-wrap:wrap;gap:5px">
+              ${AUDIO_OPTS.map(a=>`<button class="prod-fmt-btn${audioSel.includes(a)?' active':''}"
+                onclick="toggleAudio(${p.id},'${a}')">${a}</button>`).join('')}
+            </div>
           </div>
         </div>
         <textarea class="note-area production-area" rows="3" placeholder="幀率、音訊規格、編碼…&#10;例：29.97P / XAVC-L / 48kHz"
@@ -1086,7 +1100,21 @@ function renderProduction(p) {
       </div>
       <div class="production-block">
         <div class="sec-label">流程</div>
-        <textarea class="note-area production-area" rows="10" placeholder="拍攝流程、注意事項、SOP…&#10;例：1. 暖機15分鐘 2. 白平衡確認 3. 對焦測試"
+        <div class="prod-spec-list" style="margin-bottom:10px">
+          <div class="prod-spec-row">
+            <span class="prod-spec-label">主持人</span>
+            <input class="prod-audio-input" style="flex:1" value="${esc(p.hostName||'')}" placeholder="主持人姓名"
+              oninput="getP(${p.id}).hostName=this.value;debouncedSave(getP(${p.id}))">
+          </div>
+          <div class="prod-spec-row">
+            <span class="prod-spec-label">提詞機</span>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" ${teleOn?'checked':''} onchange="getP(${p.id}).teleprompter=this.checked;debouncedSave(getP(${p.id}))">
+              <span style="font-size:13px;color:${teleOn?'#eee':'#555'}">${teleOn?'使用提詞機':'不使用'}</span>
+            </label>
+          </div>
+        </div>
+        <textarea class="note-area production-area" rows="8" placeholder="拍攝流程、注意事項、SOP…&#10;例：1. 暖機15分鐘 2. 白平衡確認 3. 對焦測試"
           oninput="getP(${p.id}).flowNote=this.value;debouncedSave(getP(${p.id}))">${esc(p.flowNote||'')}</textarea>
       </div>
     </div>
@@ -1095,7 +1123,15 @@ function renderProduction(p) {
 
 function setProdFormat(id, fmt) {
   const p = getP(id);
-  p.recordFormat = p.recordFormat === fmt ? '' : fmt; // 再點一次取消
+  p.recordFormat = p.recordFormat === fmt ? '' : fmt;
+  renderMain(); debouncedSave(p);
+}
+function toggleAudio(id, opt) {
+  const p = getP(id);
+  if (!p.audioOpts) p.audioOpts = [];
+  const idx = p.audioOpts.indexOf(opt);
+  if (idx >= 0) p.audioOpts.splice(idx, 1);
+  else p.audioOpts.push(opt);
   renderMain(); debouncedSave(p);
 }
 
@@ -1537,7 +1573,8 @@ window.renderMain     = renderMain;
 window.renderNav      = renderNav;
 window.renderMobileNav = renderMobileNav;
 window.renderProduction = renderProduction;
-window.setProdFormat    = setProdFormat;
+window.setProdFormat   = setProdFormat;
+window.toggleAudio     = toggleAudio;
 window.render         = render;
 // activeTab / activeId: 讓 inline handler 讀寫時透過函式操作 module 變數
 window.setActiveTab   = v => { activeTab = v; };
