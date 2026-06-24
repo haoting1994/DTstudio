@@ -47,13 +47,18 @@
   /* 分類區塊 header */
   .nav-category { padding: 10px 14px 4px; display: flex; align-items: center; gap: 6px; user-select: none; }
   .nav-category-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .nav-category-dot.real { background: #e8720c; }
+  .nav-category-dot.real  { background: #e8720c; }
   .nav-category-dot.green { background: #3ecf6a; }
+  .nav-category-dot.dctrl { background: #a78bfa; }
   .nav-category-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-  .nav-category-label.real { color: #e8720c; }
+  .nav-category-label.real  { color: #e8720c; }
   .nav-category-label.green { color: #3ecf6a; }
-  .nav-category-label.none { color: #555; }
-  .nav-category-dot.none { background: #444; }
+  .nav-category-label.dctrl { color: #a78bfa; }
+  .nav-category-label.none  { color: #555; }
+  .nav-category-dot.none    { background: #444; }
+  .type-sel-dot.dctrl   { background: #a78bfa; box-shadow: 0 0 5px #a78bfa88; }
+  .type-sel-label.dctrl { color: #a78bfa; }
+  .type-sel-wrap:has(.type-sel-dot.dctrl) { border-color: #a78bfa55; }
   /* drop zone highlight on category */
   .nav-category.drop-active { background: rgba(255,255,255,0.05); border-radius: 4px; }
   .nav-add { margin: 8px 12px; padding: 7px; border: 1px dashed #555; border-radius: var(--radius-sm); font-size: 12px; color: #777; text-align: center; cursor: pointer; transition: all 0.15s; }
@@ -494,8 +499,15 @@ onSnapshot(colRef(), snap => {
   incoming.sort((a,b) => (a.order??a.id) - (b.order??b.id));
   programs = incoming;
   nextId = programs.length ? Math.max(...programs.map(p=>p.id))+1 : 1;
-  if (!activeId && programs.length) activeId = programs[0].id;
-  if (activeId && !getP(activeId) && programs.length) activeId = programs[0].id;
+  if (!activeId) {
+    // 預設選實景棚第一個節目
+    const firstReal = programs.find(p => p.studioType === 'real');
+    activeId = (firstReal || programs[0])?.id ?? null;
+  }
+  if (activeId && !getP(activeId) && programs.length) {
+    const firstReal = programs.find(p => p.studioType === 'real');
+    activeId = (firstReal || programs[0])?.id ?? null;
+  }
   saveToLocal();
   document.getElementById('loadingOverlay').classList.add('hidden');
   setSyncStatus('online', '已同步');
@@ -609,9 +621,10 @@ function render() { renderNav(); renderMobileNav(); renderMain(); }
 function renderNav() {
   const nav = document.getElementById('navList'); if (!nav) return;
   const CATS = [
-    { key: 'real',  label: '實景棚', dotCls: 'real',  labelCls: 'real' },
-    { key: 'green', label: '綠幕棚', dotCls: 'green', labelCls: 'green' },
-    { key: '',      label: '未分類', dotCls: 'none',  labelCls: 'none' },
+    { key: 'real',   label: '實景棚', dotCls: 'real',   labelCls: 'real' },
+    { key: 'green',  label: '綠幕棚', dotCls: 'green',  labelCls: 'green' },
+    { key: 'dctrl',  label: 'D 控',   dotCls: 'dctrl',  labelCls: 'dctrl' },
+    { key: '',       label: '未分類', dotCls: 'none',   labelCls: 'none' },
   ];
   let html = '';
   CATS.forEach(cat => {
@@ -639,9 +652,10 @@ function renderMobileNav() {
   const t = document.getElementById('mobileNavTitle'); if (t && p) t.textContent = p.name;
   const list = document.getElementById('mobileNavList'); if (!list) return;
   const CATS = [
-    { key: 'real',  label: '實景棚', labelCls: 'real' },
-    { key: 'green', label: '綠幕棚', labelCls: 'green' },
-    { key: '',      label: '未分類', labelCls: 'none' },
+    { key: 'real',   label: '實景棚', labelCls: 'real' },
+    { key: 'green',  label: '綠幕棚', labelCls: 'green' },
+    { key: 'dctrl',  label: 'D 控',   labelCls: 'dctrl' },
+    { key: '',       label: '未分類', labelCls: 'none' },
   ];
   let html = '';
   CATS.forEach(cat => {
@@ -669,12 +683,13 @@ function renderMain() {
       <div class="main-header-left">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
           <div class="type-sel-wrap" title="點選切換棚別">
-            <span class="type-sel-dot ${p.studioType==='real'?'real':p.studioType==='green'?'green':'none'}"></span>
-            <span class="type-sel-label ${p.studioType==='real'?'real':p.studioType==='green'?'green':'none'}">${p.studioType==='real'?'實景棚':p.studioType==='green'?'綠幕棚':'棚別'}</span>
+            <span class="type-sel-dot ${p.studioType==='real'?'real':p.studioType==='green'?'green':p.studioType==='dctrl'?'dctrl':'none'}"></span>
+            <span class="type-sel-label ${p.studioType==='real'?'real':p.studioType==='green'?'green':p.studioType==='dctrl'?'dctrl':'none'}">${p.studioType==='real'?'實景棚':p.studioType==='green'?'綠幕棚':p.studioType==='dctrl'?'D 控':'棚別'}</span>
             <select onchange="getP(${p.id}).studioType=this.value;debouncedSave(getP(${p.id}));renderNav();renderMobileNav();renderMain()">
               <option value="" ${!p.studioType?'selected':''}>未分類</option>
               <option value="real" ${p.studioType==='real'?'selected':''}>實景棚</option>
               <option value="green" ${p.studioType==='green'?'selected':''}>綠幕棚</option>
+              <option value="dctrl" ${p.studioType==='dctrl'?'selected':''}>D 控</option>
             </select>
           </div>
           <input class="editable-title" value="${esc(p.name)}"
@@ -710,12 +725,15 @@ function renderScene(p) {
 
   // 依棚別決定燈光配置
   const isGreenStudio = p.studioType === 'green';
+  const isDStudio = p.studioType === 'dctrl';
 
   // 顏色 → CSS class
   const colorClass = c => ({'orange':'c-orange','yellow':'c-yellow','blue':'c-blue','white':'c-white'}[c]||'c-orange');
 
   const FIXED_LIGHTS_DEF = isGreenStudio ? [
     {key:'G1',group:'green'},{key:'G2',group:'green'},{key:'G3',group:'green'},
+  ] : isDStudio ? [
+    {key:'S1',group:'blue'},{key:'S2',group:'blue'},{key:'平板A',group:'yellow'},{key:'平板B',group:'yellow'},
   ] : [
     {key:'A1',group:'yellow'},{key:'A2',group:'yellow'},
     {key:'B1',group:'blue'},{key:'B2',group:'blue'},{key:'B3',group:'blue'},
@@ -774,6 +792,11 @@ function renderScene(p) {
     {key:'G1', label:'G1 (200x)', group:'green'},
     {key:'G2', label:'G2 (200x)', group:'green'},
     {key:'G3', label:'G3 (200x)', group:'green'},
+  ] : isDStudio ? [
+    {key:'S1',  label:'S1 (200x)', group:'blue'},
+    {key:'S2',  label:'S2 (200x)', group:'blue'},
+    {key:'平板A', label:'平板燈 A',  group:'yellow'},
+    {key:'平板B', label:'平板燈 B',  group:'yellow'},
   ] : [
     {key:'A1', label:'A1 (360c)', group:'yellow'},
     {key:'A2', label:'A2 (360c)', group:'yellow'},
