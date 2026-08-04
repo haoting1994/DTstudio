@@ -114,11 +114,15 @@
   .gallery-slider::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
   .gallery-slide { position: relative; flex-shrink: 0; width: 72%; max-width: 680px; min-width: 260px; border-radius: var(--radius); overflow: hidden; background: #3a3a3a; border: 1px solid rgba(255,255,255,0.1); scroll-snap-align: start; }
   .gallery-slide img { width: 100%; max-height: 420px; object-fit: contain; display: block; background: #2e2e2e; }
-  .gallery-slide .slide-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: flex-end; opacity: 0; transition: opacity 0.2s; }
+  .gallery-slide .slide-label { position: absolute; bottom: 8px; right: 8px; background: none; display: flex; opacity: 0; transition: opacity 0.2s; }
   .gallery-slide:hover .slide-label { opacity: 1; }
   .gallery-slide .slide-label input { display: none; }
-  .gallery-slide .slide-del { background: none; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
-  .gallery-slide .slide-del:hover { color: var(--red); }
+  .gallery-slide .slide-update { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #888; font-size: 11px; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .gallery-slide .slide-update:hover { background: rgba(255,255,255,0.15); color: #ccc; }
+  .gallery-slide .slide-del { display: none; }
+  /* X 刪除按鈕 — 右上角 */
+  .gallery-slide .slide-close { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.55); border: none; color: #aaa; font-size: 14px; line-height: 1; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .gallery-slide .slide-close:hover { background: rgba(208,64,64,0.7); color: #fff; }
   .gallery-slide .light-tag { position: absolute; }
   .gallery-add-slide { flex-shrink: 0; width: 140px; min-height: 200px; border-radius: var(--radius); border: 1px dashed rgba(255,255,255,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #666; font-size: 12px; cursor: pointer; transition: all 0.15s; scroll-snap-align: start; background: rgba(255,255,255,0.02); }
   .gallery-add-slide:hover, .gallery-add-slide.drag-over { border-color: var(--accent); color: var(--accent); background: rgba(232,114,12,0.06); }
@@ -781,12 +785,12 @@ function renderScene(p) {
     <div class="gallery-slide" id="sceneZone${p.id}_${si}">
       <img src="${img.src}" draggable="false">
       ${si===0 ? tags : ''}
+      <button class="slide-close" onclick="removeSceneImg(${p.id},${si})">✕</button>
       <div class="slide-label">
-        <input value="${esc(img.label||'')}" placeholder="圖片說明（佈光圖、場佈圖…）"
-          oninput="getP(${p.id}).sceneImgs[${si}].label=this.value;debouncedSave(getP(${p.id}))"
-          onclick="event.stopPropagation()">
-        <button class="slide-del" onclick="removeSceneImg(${p.id},${si})">✕</button>
+        <button class="slide-update" onclick="event.stopPropagation();document.getElementById('sceneReplace${p.id}_${si}').click()">更換圖片</button>
       </div>
+      <input type="file" accept="image/*" id="sceneReplace${p.id}_${si}" style="display:none"
+        onchange="replaceSceneImg(${p.id},${si},this)">
     </div>`).join('');
 
   // 依棚別選擇燈光配置
@@ -1063,7 +1067,7 @@ function renderProduction(p) {
   const camLabel = camCount > 0 ? `${countWord}-${typeWord}` : '—';
   const lightsOn = (p.lights || []).filter(l => l.on !== false).length;
   const fmt = p.recordFormat || '';
-  const AUDIO_OPTS = ['mini mic','Zoom','L8','H5'];
+  const AUDIO_OPTS = ['mini mic','Zoom L8','IC錄音','DJI'];
   const audioSel = p.audioOpts || [];
   const teleOn = p.teleprompter || false;
 
@@ -1207,6 +1211,18 @@ function removeSceneImg(id, idx) {
   const p = getP(id);
   p.sceneImgs.splice(idx, 1);
   renderMain(); saveProgram(p);
+}
+
+async function replaceSceneImg(id, idx, input) {
+  const file = input.files[0]; if (!file) return;
+  setSyncStatus('saving', '上傳圖片中…');
+  try {
+    const base64 = await compressImg(file, 1400, 0.85);
+    const url = await uploadToCloud(base64);
+    const p = getP(id);
+    p.sceneImgs[idx].src = url;
+    renderMain(); saveProgram(p);
+  } catch(e) { setSyncStatus('error','上傳失敗'); toast('上傳失敗：' + e.message); }
 }
 
 async function addOnairImgs(id, input) {
@@ -1545,6 +1561,7 @@ window.fmtMm = fmtMm; window.fmtF = fmtF;
 window.handleImg      = handleImg;
 window.addSceneImgs    = addSceneImgs;
 window.removeSceneImg  = removeSceneImg;
+window.replaceSceneImg = replaceSceneImg;
 window.addOnairImgs    = addOnairImgs;
 window.addOnairSlide   = addOnairSlide;
 window.handleOnairImg  = handleOnairImg;
