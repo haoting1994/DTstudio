@@ -153,26 +153,27 @@
   }
 
   /* ── LIGHT TAGS ── */
-  .light-tag { position: absolute; border-radius: 20px; padding: 3px 7px; display: flex; align-items: center; gap: 4px; cursor: move; user-select: none; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: box-shadow 0.15s; }
+  .light-tag { position: absolute; border-radius: 20px; padding: 3px 8px; display: flex; align-items: center; gap: 5px; cursor: move; user-select: none; backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.5); transition: box-shadow 0.15s; }
   .light-tag:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.6); }
   /* A燈 — 黃 */
-  .light-tag.c-yellow { background: rgba(26,22,0,0.82); border: 1.5px solid #e8c40c; }
+  .light-tag.c-yellow { background: rgba(26,22,0,0.85); border: 1.5px solid #e8c40c; }
   .light-tag.c-yellow .tag-val { color: #e8c40c; }
-  .light-tag.c-yellow .tag-key { color: #e8c40c; }
+  .light-tag.c-yellow .tag-divider { background: #e8c40c44; }
   /* B燈 — 藍 */
-  .light-tag.c-blue { background: rgba(0,10,30,0.82); border: 1.5px solid #4a9fe8; }
+  .light-tag.c-blue { background: rgba(0,10,30,0.85); border: 1.5px solid #4a9fe8; }
   .light-tag.c-blue .tag-val { color: #4a9fe8; }
-  .light-tag.c-blue .tag-key { color: #4a9fe8; }
+  .light-tag.c-blue .tag-divider { background: #4a9fe844; }
   /* C燈 — 綠 */
-  .light-tag.c-green { background: rgba(0,20,8,0.82); border: 1.5px solid #3ecf6a; }
+  .light-tag.c-green { background: rgba(0,20,8,0.85); border: 1.5px solid #3ecf6a; }
   .light-tag.c-green .tag-val { color: #3ecf6a; }
-  .light-tag.c-green .tag-key { color: #3ecf6a; }
-  .light-tag .tag-key { font-size: 10px; font-weight: 800; opacity: 0.85; white-space: nowrap; }
+  .light-tag.c-green .tag-divider { background: #3ecf6a44; }
+  /* 燈名白色，分隔線 */
+  .light-tag .tag-key { font-size: 10px; font-weight: 800; color: #fff; white-space: nowrap; letter-spacing: 0.02em; }
+  .light-tag .tag-divider { width: 1px; height: 12px; flex-shrink: 0; }
   .light-tag .tag-dot { display: none; }
   .light-tag .tag-sep { display: none; }
   .light-tag .tag-values { display: flex; gap: 3px; align-items: center; }
   .light-tag .tag-val { font-size: 11px; font-weight: 700; padding: 0 2px; border-radius: 3px; white-space: nowrap; pointer-events: none; }
-  .light-tag .tag-sep { display: none; }
 
   /* ── LIGHT CARDS ── */
   .lights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 16px; }
@@ -243,7 +244,19 @@
   .note-plain:focus { border-color: rgba(255,255,255,0.25); }
   .note-plain::placeholder { color: #444; }
 
-  /* 鎖定按鈕 */
+  /* 燈光控制列 — 與標題同行 */
+  .lights-header-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .lights-ctrl-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
+  .lights-ctrl-item { display: flex; align-items: center; gap: 6px; }
+  .lights-ctrl-label { font-size: 10px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  .lights-ctrl-input { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; padding: 3px 6px; color: #eee; font-size: 12px; font-weight: 600; font-family: inherit; outline: none; width: 60px; text-align: center; -moz-appearance: textfield; }
+  .lights-ctrl-input::-webkit-inner-spin-button, .lights-ctrl-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .lights-ctrl-input:focus { border-color: var(--accent); }
+  .lights-ctrl-unit { font-size: 10px; color: #555; }
+  .lights-ctrl-btn { padding: 3px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: none; color: #555; font-size: 10px; cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+  .lights-ctrl-btn:hover { border-color: rgba(255,255,255,0.25); color: #aaa; }
+  .lights-ctrl-btn.active { background: rgba(255,255,255,0.1); color: #ddd; border-color: rgba(255,255,255,0.3); font-weight: 600; }
+  .lights-ctrl-divider { width: 1px; height: 14px; background: rgba(255,255,255,0.08); }
   .lock-btn { background: none; border: none; cursor: pointer; font-size: 14px; line-height: 1; padding: 2px 4px; flex-shrink: 0; opacity: 0.35; transition: opacity 0.15s; }
   .lock-btn.locked { opacity: 1; color: #e8720c; }
 
@@ -766,6 +779,7 @@ function renderScene(p) {
       return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
         onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
         <span class="tag-key">${esc(keyName)}</span>
+        <span class="tag-divider"></span>
         <span class="tag-values">
           <span class="tag-val">${esc(l.intensity||'H—')}</span>
           <span class="tag-val">${esc(l.kelvin||'S—')}</span>
@@ -775,6 +789,7 @@ function renderScene(p) {
     return `<div class="light-tag ${cls}" id="ltag-${i}" style="${posStyle}"
       onmousedown="startDrag(event,${p.id},${i})" ontouchstart="startTouchDrag(event,${p.id},${i})">
       <span class="tag-key">${esc(keyName)}</span>
+      <span class="tag-divider"></span>
       <span class="tag-values">
         <span class="tag-val">${esc(l.intensity||'—')}</span>
         <span class="tag-val">${esc(l.kelvin||'—')}</span>
@@ -935,7 +950,25 @@ function renderScene(p) {
         oninput="getP(${p.id}).sceneCaption=this.value;debouncedSave(getP(${p.id}))">
     </div>
     <div class="panel-gap">
-      <div class="sec-label">燈光設定</div>
+      <div class="lights-header-row">
+        <div class="sec-label" style="margin-bottom:0;flex-shrink:0">燈光設定</div>
+        <div class="lights-ctrl-inline">
+          <div class="lights-ctrl-item">
+            <span class="lights-ctrl-label">色溫</span>
+            <input class="lights-ctrl-input" type="number" min="2500" max="6500" step="100"
+              value="${p.globalKelvin||''}" placeholder="統一"
+              onchange="setGlobalKelvin(${p.id},this.value)">
+            <span class="lights-ctrl-unit">K</span>
+          </div>
+          <div class="lights-ctrl-divider"></div>
+          <div class="lights-ctrl-item">
+            <span class="lights-ctrl-label">環境燈</span>
+            ${['全開','半開','全關'].map(v=>`
+              <button class="lights-ctrl-btn${(p.ambientLight||'')=== v?' active':''}"
+                onclick="setAmbient(${p.id},'${v}')">${v}</button>`).join('')}
+          </div>
+        </div>
+      </div>
       <div class="lights-grid">${lightCards}</div>
     </div>
   </div>`;
@@ -1373,6 +1406,23 @@ async function dropOnairNew(event, id) {
   }
   renderMain(); saveProgram(p);
 }
+function setGlobalKelvin(id, val) {
+  const p = getP(id);
+  const num = Math.round(Math.max(2500, Math.min(6500, Number(val))));
+  if (!num) return;
+  p.globalKelvin = num;
+  // 套用到所有非 RGB 燈
+  p.lights.forEach(l => {
+    if (!l.isRGB) { l.kelvinRaw = num; l.kelvin = num + 'K'; }
+  });
+  renderMain(); saveProgram(p);
+}
+function setAmbient(id, val) {
+  const p = getP(id);
+  p.ambientLight = p.ambientLight === val ? '' : val;
+  renderMain(); debouncedSave(p);
+}
+
 function setLightIntensity(id, idx, val) {
   const p = getP(id); const l = p.lights[idx];
   const num = Math.round(Math.max(0, Math.min(100, Number(val))));
@@ -1548,6 +1598,8 @@ window.removeCam      = (id,idx)=>{
   const p=getP(id);p.cameras.splice(idx,1);renderMain();saveProgram(p);
 };
 window.togglePower    = togglePower;
+window.setGlobalKelvin = setGlobalKelvin;
+window.setAmbient      = setAmbient;
 window.setLightIntensity = setLightIntensity;
 window.setLightKelvin    = setLightKelvin;
 window.toggleLock        = toggleLock;
